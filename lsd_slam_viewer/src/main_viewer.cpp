@@ -26,7 +26,6 @@
 
 #include <dynamic_reconfigure/server.h>
 #include "lsd_slam_viewer/LSDSLAMViewerParamsConfig.h"
-#include <QApplication>
 
 #include "lsd_slam_viewer/keyframeGraphMsg.h"
 #include "lsd_slam_viewer/keyframeMsg.h"
@@ -136,19 +135,10 @@ void rosFileLoop(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 
-  printf("Started QApplication thread\n");
-  // Read command lines arguments.
-  QApplication application(argc, argv);
-
   // Instantiate the viewer.
   viewer = new PointCloudViewer();
 
-#if QT_VERSION < 0x040000
-  // Set the viewer as the application main widget.
-  application.setMainWidget(viewer);
-#else
   viewer->setWindowTitle("PointCloud Viewer");
-#endif
 
   // Make the viewer window visible on screen.
   viewer->show();
@@ -162,8 +152,6 @@ int main(int argc, char** argv) {
     // start ROS thread
     rosThread = boost::thread(rosThreadLoop, argc, argv);
   }
-
-  application.exec();
 
   printf("Shutting down... \n");
   ros::shutdown();
