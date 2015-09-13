@@ -19,16 +19,18 @@
  */
 
 #define GL_GLEXT_PROTOTYPES 1
-#include "PointCloudViewer.h"
-#include "qfiledialog.h"
-#include "qcoreapplication.h"
-#include <stdio.h>
-#include "settings.h"
-#include "ros/package.h"
 
 #include <zlib.h>
+#include <stdio.h>
+#include <fstream>
 #include <iostream>
 
+#include "qfiledialog.h"
+
+#include <ros/package.h>
+
+#include "settings.h"
+#include "PointCloudViewer.h"
 
 #include <GL/glx.h>
 #include <GL/gl.h>
@@ -38,9 +40,6 @@
 
 #include "KeyFrameDisplay.h"
 #include "KeyFrameGraphDisplay.h"
-
-#include <iostream>
-#include <fstream>
 
 PointCloudViewer::PointCloudViewer() {
   setPathKey(Qt::Key_0,0);
@@ -54,13 +53,10 @@ PointCloudViewer::PointCloudViewer() {
   setPathKey(Qt::Key_8,8);
   setPathKey(Qt::Key_9,9);
 
-
   currentCamDisplay = 0;
   graphDisplay = 0;
 
-
-  for(int i=0;i<10;i++)
-  {
+  for(int i = 0; i < 10; i++) {
     KFexists[i] = 0;
     KFautoPlayIdx[i] = -1;
   }
@@ -73,16 +69,12 @@ PointCloudViewer::PointCloudViewer() {
   reset();
 }
 
-
-PointCloudViewer::~PointCloudViewer()
-{
+PointCloudViewer::~PointCloudViewer() {
   delete currentCamDisplay;
   delete graphDisplay;
 }
 
-
-void PointCloudViewer::reset()
-{
+void PointCloudViewer::reset() {
   if(currentCamDisplay != 0)
     delete currentCamDisplay;
   if(graphDisplay != 0)
@@ -106,7 +98,6 @@ void PointCloudViewer::reset()
   int k = system(buf);
   snprintf(buf,500,"mkdir %s",save_folder.c_str());
   k += system(buf);
-
 
   assert(k != -42);
 

@@ -19,45 +19,44 @@
  */
 
 
-#include "ros/ros.h"
-#include "boost/thread.hpp"
+#include <boost/thread.hpp>
+#include <boost/foreach.hpp>
+
+#include <ros/ros.h>
+#include <rosbag/bag.h>
+#include <rosbag/query.h>
+#include <rosbag/view.h>
+
+#include <dynamic_reconfigure/server.h>
+
 #include "settings.h"
 #include "PointCloudViewer.h"
 
-#include <dynamic_reconfigure/server.h>
 #include "lsd_slam_viewer/LSDSLAMViewerParamsConfig.h"
-
 #include "lsd_slam_viewer/keyframeGraphMsg.h"
 #include "lsd_slam_viewer/keyframeMsg.h"
 
-#include "boost/foreach.hpp"
-#include "rosbag/bag.h"
-#include "rosbag/query.h"
-#include "rosbag/view.h"
-
-PointCloudViewer* viewer = 0;
+PointCloudViewer* viewer = NULL;
 
 void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t level) {
 
-  pointTesselation = config.pointTesselation;
-  lineTesselation = config.lineTesselation;
+  pointTesselation      = config.pointTesselation;
+  lineTesselation       = config.lineTesselation;
 
-  keepInMemory = config.keepInMemory;
-  showKFCameras = config.showKFCameras;
-  showKFPointclouds = config.showKFPointclouds;
-  showConstraints = config.showConstraints;
-  showCurrentCamera = config.showCurrentCamera;
+  keepInMemory          = config.keepInMemory;
+  showKFCameras         = config.showKFCameras;
+  showKFPointclouds     = config.showKFPointclouds;
+  showConstraints       = config.showConstraints;
+  showCurrentCamera     = config.showCurrentCamera;
   showCurrentPointcloud = config.showCurrentPointcloud;
 
+  scaledDepthVarTH      = exp10(config.scaledDepthVarTH);
+  absDepthVarTH         = exp10(config.absDepthVarTH);
+  minNearSupport        = config.minNearSupport;
+  sparsifyFactor        = config.sparsifyFactor;
+  cutFirstNKf           = config.cutFirstNKf;
 
-  scaledDepthVarTH = exp10( config.scaledDepthVarTH );
-  absDepthVarTH = exp10( config.absDepthVarTH );
-  minNearSupport = config.minNearSupport;
-  sparsifyFactor = config.sparsifyFactor;
-  cutFirstNKf = config.cutFirstNKf;
-
-  saveAllVideo = config.saveAllVideo;
-
+  saveAllVideo          = config.saveAllVideo;
 }
 
 void frameCb(lsd_slam_viewer::keyframeMsgConstPtr msg) {
@@ -87,8 +86,8 @@ void rosThreadLoop(int argc, char** argv) {
   ros::NodeHandle nh;
 
   ros::Subscriber liveFrames_sub = nh.subscribe(nh.resolveName("lsd_slam/liveframes"),1, frameCb);
-  ros::Subscriber keyFrames_sub = nh.subscribe(nh.resolveName("lsd_slam/keyframes"),20, frameCb);
-  ros::Subscriber graph_sub       = nh.subscribe(nh.resolveName("lsd_slam/graph"),10, graphCb);
+  ros::Subscriber keyFrames_sub  = nh.subscribe(nh.resolveName("lsd_slam/keyframes"),20, frameCb);
+  ros::Subscriber graph_sub      = nh.subscribe(nh.resolveName("lsd_slam/graph"),10, graphCb);
 
   ros::spin();
 
@@ -135,6 +134,7 @@ void rosFileLoop(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 
+  printf("start");
   // Instantiate the viewer.
   viewer = new PointCloudViewer();
 
