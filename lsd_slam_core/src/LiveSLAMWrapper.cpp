@@ -34,7 +34,7 @@
 namespace lsd_slam {
 
 LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper) {
-  this->imageStream = imageStream;
+  this->imageStream   = imageStream;
   this->outputWrapper = outputWrapper;
   imageStream->getBuffer()->setReceiver(this);
 

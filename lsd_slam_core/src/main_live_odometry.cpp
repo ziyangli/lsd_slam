@@ -18,23 +18,22 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/thread.hpp>
+
 #include "LiveSLAMWrapper.h"
 
-#include <boost/thread.hpp>
 #include "util/settings.h"
 #include "util/globalFuncs.h"
 #include "SlamSystem.h"
-
 
 #include "IOWrapper/ROS/ROSImageStreamThread.h"
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "IOWrapper/ROS/rosReconfigure.h"
 
-#include <X11/Xlib.h>
+#include <X11/Xlib.h>  // interesting, have to be at the end?
 
 using namespace lsd_slam;
-int main( int argc, char** argv )
-{
+int main(int argc, char** argv) {
   XInitThreads();
 
   ros::init(argc, argv, "LSD_SLAM");
@@ -50,20 +49,19 @@ int main( int argc, char** argv )
   InputImageStream* inputStream = new ROSImageStreamThread();
 
   std::string calibFile;
-  if(ros::param::get("~calib", calibFile))
-  {
+  if(ros::param::get("~calib", calibFile)) {
     ros::param::del("~calib");
     inputStream->setCalibration(calibFile);
   }
   else
     inputStream->setCalibration("");
+
   inputStream->run();
 
   Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(inputStream->width(), inputStream->height());
   LiveSLAMWrapper slamNode(inputStream, outputWrapper);
+
   slamNode.Loop();
-
-
 
   if (inputStream != nullptr)
     delete inputStream;
