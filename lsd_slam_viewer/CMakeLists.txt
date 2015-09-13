@@ -8,7 +8,8 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-set(ROS_BUILD_TYPE Release)
+## set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 
@@ -19,7 +20,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 add_definitions("-DPYTHON_EXECUTABLE=/usr/bin/python2 -DPYTHON_INCLUDE_DIR=/usr/include/python2.7 -DPYTHON_LIBRARY=/usr/lib/libpython2.7.so")
-
 
 find_package(OpenGL REQUIRED)
 set(QT_USE_QTOPENGL TRUE)
@@ -32,38 +32,33 @@ rosbuild_find_ros_package(dynamic_reconfigure)
 include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
-
-
-
-
 # Messages & Services
 rosbuild_genmsg()
-
 
 # SSE flags
 rosbuild_check_for_sse()
 set(CMAKE_CXX_FLAGS
-   "${SSE_FLAGS}"
-)
+  "${SSE_FLAGS}"
+  )
 
 # SSE Sources files
-set(SOURCE_FILES         
+set(SOURCE_FILES
   src/PointCloudViewer.cpp
   src/KeyFrameDisplay.cpp
   src/KeyFrameGraphDisplay.cpp
   src/settings.cpp
-)
+  )
 
-set(HEADER_FILES     
+set(HEADER_FILES
   src/PointCloudViewer.h
   src/KeyFrameDisplay.h
   src/KeyFrameGraphDisplay.h
   src/settings.h
-)
+  )
 
 include_directories(
   ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-)  
+  )
 
 rosbuild_add_executable(viewer src/main_viewer.cpp ${SOURCE_FILES} ${HEADER_FILES})
 
@@ -71,6 +66,4 @@ target_link_libraries(viewer ${QGLViewer_LIBRARIES} ${QT_LIBRARIES} ${QGLVIEWER_
 
 rosbuild_link_boost(viewer thread)
 
-
 rosbuild_add_executable(videoStitch src/main_stitchVideos.cpp)
-
