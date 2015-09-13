@@ -10,7 +10,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 set(ROS_BUILD_TYPE Release)
 
-rosbuild_init() 
+rosbuild_init()
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
@@ -41,8 +41,8 @@ add_definitions("-DENABLE_SSE")
 
 # Also add some useful compiler flag
 set(CMAKE_CXX_FLAGS
-   "${CMAKE_CXX_FLAGS} ${SSE_FLAGS} -march=native  -std=c++0x"
-) 
+  "${CMAKE_CXX_FLAGS} ${SSE_FLAGS} -march=native  -std=c++0x"
+  )
 
 # Set source files
 set(lsd_SOURCE_FILES
@@ -66,13 +66,13 @@ set(lsd_SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/GlobalMapping/KeyFrameGraph.cpp
   ${PROJECT_SOURCE_DIR}/src/GlobalMapping/g2oTypeSim3Sophus.cpp
   ${PROJECT_SOURCE_DIR}/src/GlobalMapping/TrackableKeyFrameSearch.cpp
-)
+  )
 set(SOURCE_FILES
   ${lsd_SOURCE_FILES}
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/ROS/ROSImageStreamThread.cpp
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/ROS/ROSOutput3DWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
-)
+  )
 
 include_directories(
   ${EIGEN3_INCLUDE_DIR}
@@ -80,21 +80,26 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
   ${CSPARSE_INCLUDE_DIR} #Has been set by SuiteParse
   ${CHOLMOD_INCLUDE_DIR} #Has been set by SuiteParse
-)
-
+  )
 
 # build shared library.
 rosbuild_add_library(lsdslam SHARED ${SOURCE_FILES})
-target_link_libraries(lsdslam ${FABMAP_LIB} g2o_core g2o_stuff cxsparse g2o_solver_csparse g2o_csparse_extension g2o_types_sim3 g2o_types_sba X11)
+target_link_libraries(lsdslam
+  ${FABMAP_LIB}
+  g2o_core
+  g2o_stuff
+  cxsparse
+  g2o_solver_csparse
+  g2o_csparse_extension
+  g2o_types_sim3
+  g2o_types_sba
+  X11)
 rosbuild_link_boost(lsdslam thread)
-
 
 # build live ros node
 rosbuild_add_executable(live_slam src/main_live_odometry.cpp)
 target_link_libraries(live_slam lsdslam)
 
-
 # build image node
 rosbuild_add_executable(dataset_slam src/main_on_images.cpp)
 target_link_libraries(dataset_slam lsdslam)
-

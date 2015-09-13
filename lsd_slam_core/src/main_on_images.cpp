@@ -18,43 +18,45 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LiveSLAMWrapper.h"
-
-#include <boost/thread.hpp>
-#include "util/settings.h"
-#include "util/globalFuncs.h"
-#include "SlamSystem.h"
-
 #include <sstream>
 #include <fstream>
 #include <dirent.h>
 #include <algorithm>
 
+#include <boost/thread.hpp>
+#include <opencv2/opencv.hpp>
+
+#include <ros/package.h>
+
+#include "LiveSLAMWrapper.h"
+
+#include "util/settings.h"
+#include "util/globalFuncs.h"
+#include "SlamSystem.h"
+
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "IOWrapper/ROS/rosReconfigure.h"
 
 #include "util/Undistorter.h"
-#include <ros/package.h>
-
-#include "opencv2/opencv.hpp"
 
 std::string &ltrim(std::string &s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
   return s;
 }
+
 std::string &rtrim(std::string &s) {
   s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
   return s;
 }
+
 std::string &trim(std::string &s) {
   return ltrim(rtrim(s));
 }
-int getdir (std::string dir, std::vector<std::string> &files)
-{
+
+int getdir(std::string dir, std::vector<std::string> &files) {
   DIR *dp;
   struct dirent *dirp;
-  if((dp  = opendir(dir.c_str())) == NULL)
-  {
+  if((dp  = opendir(dir.c_str())) == NULL) {
     return -1;
   }
 
@@ -64,14 +66,13 @@ int getdir (std::string dir, std::vector<std::string> &files)
     if(name != "." && name != "..")
       files.push_back(name);
   }
-  closedir(dp);
 
+  closedir(dp);
 
   std::sort(files.begin(), files.end());
 
   if(dir.at( dir.length() - 1 ) != '/') dir = dir+"/";
-  for(unsigned int i=0;i<files.size();i++)
-  {
+  for(unsigned int i = 0; i < files.size(); i++) {
     if(files[i].at(0) != '/')
       files[i] = dir + files[i];
   }
@@ -79,14 +80,11 @@ int getdir (std::string dir, std::vector<std::string> &files)
   return files.size();
 }
 
-int getFile (std::string source, std::vector<std::string> &files)
-{
+int getFile(std::string source, std::vector<std::string> &files) {
   std::ifstream f(source.c_str());
 
-  if(f.good() && f.is_open())
-  {
-    while(!f.eof())
-    {
+  if(f.good() && f.is_open()) {
+    while(!f.eof()) {
       std::string l;
       std::getline(f,l);
 
@@ -107,26 +105,23 @@ int getFile (std::string source, std::vector<std::string> &files)
     else
       prefix = source.substr(0,sp);
 
-    for(unsigned int i=0;i<files.size();i++)
-    {
+    for(unsigned int i = 0; i < files.size(); i++) {
       if(files[i].at(0) != '/')
         files[i] = prefix + "/" + files[i];
     }
 
     return (int)files.size();
   }
-  else
-  {
+  else {
     f.close();
     return -1;
   }
 
 }
 
-
 using namespace lsd_slam;
-int main( int argc, char** argv )
-{
+
+int main(int argc, char** argv) {
   ros::init(argc, argv, "LSD_SLAM");
 
   dynamic_reconfigure::Server<lsd_slam_core::LSDParamsConfig> srv(ros::NodeHandle("~"));
@@ -135,9 +130,8 @@ int main( int argc, char** argv )
   dynamic_reconfigure::Server<lsd_slam_core::LSDDebugParamsConfig> srvDebug(ros::NodeHandle("~Debug"));
   srvDebug.setCallback(dynConfCbDebug);
 
+  // from `util/settings.h`
   packagePath = ros::package::getPath("lsd_slam_core")+"/";
-
-
 
   // get camera calibration in form of an undistorter object.
   // if no undistortion is required, the undistorter will just pass images through.
