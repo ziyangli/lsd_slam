@@ -37,9 +37,7 @@ rosbuild_genmsg()
 
 # SSE flags
 rosbuild_check_for_sse()
-set(CMAKE_CXX_FLAGS
-  "${SSE_FLAGS}"
-  )
+set(CMAKE_CXX_FLAGS "${SSE_FLAGS}")
 
 # SSE Sources files
 set(SOURCE_FILES
@@ -56,14 +54,10 @@ set(HEADER_FILES
   src/settings.h
   )
 
-include_directories(
-  ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-  )
+include_directories(${PROJECT_SOURCE_DIR}/thirdparty/Sophus)
 
 rosbuild_add_executable(viewer src/main_viewer.cpp ${SOURCE_FILES} ${HEADER_FILES})
-
 target_link_libraries(viewer ${QGLViewer_LIBRARIES} ${QT_LIBRARIES} ${QGLVIEWER_LIBRARY} GL glut GLU)
-
 rosbuild_link_boost(viewer thread)
 
 rosbuild_add_executable(videoStitch src/main_stitchVideos.cpp)

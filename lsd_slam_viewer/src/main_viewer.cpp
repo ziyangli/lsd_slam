@@ -26,24 +26,19 @@
 
 #include <dynamic_reconfigure/server.h>
 #include "lsd_slam_viewer/LSDSLAMViewerParamsConfig.h"
-#include <qapplication.h>
-
+#include <QApplication>
 
 #include "lsd_slam_viewer/keyframeGraphMsg.h"
 #include "lsd_slam_viewer/keyframeMsg.h"
-
 
 #include "boost/foreach.hpp"
 #include "rosbag/bag.h"
 #include "rosbag/query.h"
 #include "rosbag/view.h"
 
-
 PointCloudViewer* viewer = 0;
 
-
-void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t level)
-{
+void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t level) {
 
   pointTesselation = config.pointTesselation;
   lineTesselation = config.lineTesselation;
@@ -66,24 +61,20 @@ void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t leve
 
 }
 
-void frameCb(lsd_slam_viewer::keyframeMsgConstPtr msg)
-{
+void frameCb(lsd_slam_viewer::keyframeMsgConstPtr msg) {
 
   if(msg->time > lastFrameTime) return;
 
   if(viewer != 0)
     viewer->addFrameMsg(msg);
 }
-void graphCb(lsd_slam_viewer::keyframeGraphMsgConstPtr msg)
-{
+
+void graphCb(lsd_slam_viewer::keyframeGraphMsgConstPtr msg) {
   if(viewer != 0)
     viewer->addGraphMsg(msg);
 }
 
-
-
-void rosThreadLoop( int argc, char** argv )
-{
+void rosThreadLoop(int argc, char** argv) {
   printf("Started ROS thread\n");
 
   //glutInit(&argc, argv);
@@ -93,7 +84,6 @@ void rosThreadLoop( int argc, char** argv )
 
   dynamic_reconfigure::Server<lsd_slam_viewer::LSDSLAMViewerParamsConfig> srv;
   srv.setCallback(dynConfCb);
-
 
   ros::NodeHandle nh;
 
@@ -110,9 +100,7 @@ void rosThreadLoop( int argc, char** argv )
   exit(1);
 }
 
-
-void rosFileLoop( int argc, char** argv )
-{
+void rosFileLoop(int argc, char** argv) {
   ros::init(argc, argv, "viewer");
   dynamic_reconfigure::Server<lsd_slam_viewer::LSDSLAMViewerParamsConfig> srv;
   srv.setCallback(dynConfCb);
@@ -128,12 +116,10 @@ void rosFileLoop( int argc, char** argv )
   rosbag::View view(bag, rosbag::TopicQuery(topics));
 
   //for(rosbag::MessageInstance const m = view.begin(); m < view.end(); ++m)
-  BOOST_FOREACH(rosbag::MessageInstance const m, view)
-  {
+  BOOST_FOREACH(rosbag::MessageInstance const m, view) {
 
     if(m.getTopic() == "/lsd_slam/liveframes" || m.getTopic() == "/lsd_slam/keyframes")
       frameCb(m.instantiate<lsd_slam_viewer::keyframeMsg>());
-
 
     if(m.getTopic() == "/lsd_slam/graph")
       graphCb(m.instantiate<lsd_slam_viewer::keyframeGraphMsg>());
@@ -148,14 +134,11 @@ void rosFileLoop( int argc, char** argv )
   exit(1);
 }
 
-
-int main( int argc, char** argv )
-{
-
+int main(int argc, char** argv) {
 
   printf("Started QApplication thread\n");
   // Read command lines arguments.
-  QApplication application(argc,argv);
+  QApplication application(argc, argv);
 
   // Instantiate the viewer.
   viewer = new PointCloudViewer();
@@ -172,12 +155,10 @@ int main( int argc, char** argv )
 
   boost::thread rosThread;
 
-  if(argc > 1)
-  {
+  if(argc > 1) {
     rosThread = boost::thread(rosFileLoop, argc, argv);
   }
-  else
-  {
+  else {
     // start ROS thread
     rosThread = boost::thread(rosThreadLoop, argc, argv);
   }
@@ -188,5 +169,4 @@ int main( int argc, char** argv )
   ros::shutdown();
   rosThread.join();
   printf("Done. \n");
-
 }
