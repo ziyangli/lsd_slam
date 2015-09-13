@@ -137,14 +137,12 @@ int main(int argc, char** argv) {
   // if no undistortion is required, the undistorter will just pass images through.
   std::string calibFile;
   Undistorter* undistorter = 0;
-  if(ros::param::get("~calib", calibFile))
-  {
+  if(ros::param::get("~calib", calibFile)) {
     undistorter = Undistorter::getUndistorterForFile(calibFile.c_str());
     ros::param::del("~calib");
   }
 
-  if(undistorter == 0)
-  {
+  if(undistorter == 0) {
     printf("need camera calibration file! (set using _calib:=FILE)\n");
     exit(0);
   }
@@ -159,45 +157,35 @@ int main(int argc, char** argv) {
   float fy = undistorter->getK().at<double>(1, 1);
   float cx = undistorter->getK().at<double>(2, 0);
   float cy = undistorter->getK().at<double>(2, 1);
+
   Sophus::Matrix3f K;
   K << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
-
   // make output wrapper. just set to zero if no output is required.
   Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(w,h);
-
 
   // make slam system
   SlamSystem* system = new SlamSystem(w, h, K, doSlam);
   system->setVisualization(outputWrapper);
 
-
-
   // open image files: first try to open as file.
   std::string source;
   std::vector<std::string> files;
-  if(!ros::param::get("~files", source))
-  {
+  if(!ros::param::get("~files", source)) {
     printf("need source files! (set using _files:=FOLDER)\n");
     exit(0);
   }
   ros::param::del("~files");
 
-
-  if(getdir(source, files) >= 0)
-  {
+  if(getdir(source, files) >= 0) {
     printf("found %d image files in folder %s!\n", (int)files.size(), source.c_str());
   }
-  else if(getFile(source, files) >= 0)
-  {
+  else if(getFile(source, files) >= 0) {
     printf("found %d image files in file %s!\n", (int)files.size(), source.c_str());
   }
-  else
-  {
+  else {
     printf("could not load file list! wrong path / file?\n");
   }
-
-
 
   // get HZ
   double hz = 0;
@@ -205,28 +193,23 @@ int main(int argc, char** argv) {
     hz = 0;
   ros::param::del("~hz");
 
-
-
   cv::Mat image = cv::Mat(h,w,CV_8U);
-  int runningIDX=0;
+  int runningIDX = 0;
   float fakeTimeStamp = 0;
 
   ros::Rate r(hz);
 
-  for(unsigned int i=0;i<files.size();i++)
-  {
+  for(unsigned int i = 0; i < files.size(); i++) {
     cv::Mat imageDist = cv::imread(files[i], CV_LOAD_IMAGE_GRAYSCALE);
 
-    if(imageDist.rows != h_inp || imageDist.cols != w_inp)
-    {
+    if(imageDist.rows != h_inp || imageDist.cols != w_inp) {
       if(imageDist.rows * imageDist.cols == 0)
         printf("failed to load image %s! skipping.\n", files[i].c_str());
       else
-        printf("image %s has wrong dimensions - expecting %d x %d, found %d x %d. Skipping.\n",
-               files[i].c_str(),
-               w,h,imageDist.cols, imageDist.rows);
+        printf("image %s has wrong dimensions - expecting %d x %d, found %d x %d. Skipping.\n", files[i].c_str(), w, h, imageDist.cols, imageDist.rows);
       continue;
     }
+
     assert(imageDist.type() == CV_8U);
 
     undistorter->undistort(imageDist, image);
@@ -235,15 +218,14 @@ int main(int argc, char** argv) {
     if(runningIDX == 0)
       system->randomInit(image.data, fakeTimeStamp, runningIDX);
     else
-      system->trackFrame(image.data, runningIDX ,hz == 0,fakeTimeStamp);
+      system->trackFrame(image.data, runningIDX, hz == 0, fakeTimeStamp);
     runningIDX++;
-    fakeTimeStamp+=0.03;
+    fakeTimeStamp += 0.03;
 
     if(hz != 0)
       r.sleep();
 
-    if(fullResetRequested)
-    {
+    if(fullResetRequested) {
 
       printf("FULL RESET!\n");
       delete system;
@@ -261,10 +243,7 @@ int main(int argc, char** argv) {
       break;
   }
 
-
   system->finalize();
-
-
 
   delete system;
   delete undistorter;

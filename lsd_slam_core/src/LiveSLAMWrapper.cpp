@@ -18,8 +18,10 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LiveSLAMWrapper.h"
+#include <iostream>
 #include <vector>
+
+#include "LiveSLAMWrapper.h"
 #include "util/SophusUtil.h"
 
 #include "SlamSystem.h"
@@ -29,36 +31,28 @@
 #include "IOWrapper/InputImageStream.h"
 #include "util/globalFuncs.h"
 
-#include <iostream>
+namespace lsd_slam {
 
-namespace lsd_slam
-{
-
-
-LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper)
-{
+LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper) {
   this->imageStream = imageStream;
   this->outputWrapper = outputWrapper;
   imageStream->getBuffer()->setReceiver(this);
 
-  fx = imageStream->fx();
-  fy = imageStream->fy();
-  cx = imageStream->cx();
-  cy = imageStream->cy();
-  width = imageStream->width();
+  fx     = imageStream->fx();
+  fy     = imageStream->fy();
+  cx     = imageStream->cx();
+  cy     = imageStream->cy();
+  width  = imageStream->width();
   height = imageStream->height();
 
-  outFileName = packagePath+"estimated_poses.txt";
-
+  outFileName = packagePath + "estimated_poses.txt";
 
   isInitialized = false;
-
 
   Sophus::Matrix3f K_sophus;
   K_sophus << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
   outFile = nullptr;
-
 
   // make Odometry
   monoOdometry = new SlamSystem(width, height, K_sophus, doSlam);
@@ -69,30 +63,31 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
 }
 
 
-LiveSLAMWrapper::~LiveSLAMWrapper()
-{
+LiveSLAMWrapper::~LiveSLAMWrapper() {
   if(monoOdometry != 0)
     delete monoOdometry;
-  if(outFile != 0)
-  {
+
+  if(outFile != 0) {
     outFile->flush();
     outFile->close();
     delete outFile;
   }
 }
 
-void LiveSLAMWrapper::Loop()
-{
+void LiveSLAMWrapper::Loop() {
   while (true) {
+
+    // wait till image is ready
     boost::unique_lock<boost::recursive_mutex> waitLock(imageStream->getBuffer()->getMutex());
-    while (!fullResetRequested && !(imageStream->getBuffer()->size() > 0)) {
+
+    while (!fullResetRequested &&
+           !(imageStream->getBuffer()->size() > 0)) {
       notifyCondition.wait(waitLock);
     }
     waitLock.unlock();
 
 
-    if(fullResetRequested)
-    {
+    if(fullResetRequested) {
       resetAll();
       fullResetRequested = false;
       if (!(imageStream->getBuffer()->size() > 0))
@@ -109,9 +104,8 @@ void LiveSLAMWrapper::Loop()
 }
 
 
-void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
-{
-  ++ imageSeqNumber;
+void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime) {
+  imageSeqNumber++;
 
   // Convert image to grayscale, if necessary
   cv::Mat grayImg;
@@ -120,21 +114,20 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
   else
     cvtColor(img, grayImg, CV_RGB2GRAY);
 
-
   // Assert that we work with 8 bit images
   assert(grayImg.elemSize() == 1);
   assert(fx != 0 || fy != 0);
 
-
   // need to initialize
-  if(!isInitialized)
-  {
+  if(!isInitialized) {
     monoOdometry->randomInit(grayImg.data, imgTime.toSec(), 1);
     isInitialized = true;
   }
-  else if(isInitialized && monoOdometry != nullptr)
-  {
-    monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
+  else if(isInitialized && monoOdometry != nullptr) {
+    monoOdometry->trackFrame(grayImg.data,
+                             imageSeqNumber,
+                             false,
+                             imgTime.toSec());
   }
 }
 
@@ -160,16 +153,14 @@ void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
   outFile->flush();
 }
 
-void LiveSLAMWrapper::requestReset()
-{
+void LiveSLAMWrapper::requestReset() {
   fullResetRequested = true;
   notifyCondition.notify_all();
 }
 
-void LiveSLAMWrapper::resetAll()
-{
-  if(monoOdometry != nullptr)
-  {
+void LiveSLAMWrapper::resetAll() {
+
+  if(monoOdometry != nullptr) {
     delete monoOdometry;
     printf("Deleted SlamSystem Object!\n");
 
@@ -177,13 +168,12 @@ void LiveSLAMWrapper::resetAll()
     K << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
     monoOdometry = new SlamSystem(width,height,K, doSlam);
     monoOdometry->setVisualization(outputWrapper);
-
   }
+
   imageSeqNumber = 0;
   isInitialized = false;
 
   Util::closeAllWindows();
-
 }
 
 }
