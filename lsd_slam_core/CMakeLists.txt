@@ -22,10 +22,10 @@ find_package(X11 REQUIRED)
 
 # FabMap
 # uncomment this part to enable fabmap
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/openFabMap)
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/openFabMap/include)
-add_definitions("-DHAVE_FABMAP")
-set(FABMAP_LIB openFABMAP )
+# add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/openFabMap)
+# include_directories(${PROJECT_SOURCE_DIR}/thirdparty/openFabMap/include)
+# add_definitions("-DHAVE_FABMAP")
+# set(FABMAP_LIB openFABMAP )
 
 add_definitions("-DPYTHON_EXECUTABLE=/usr/bin/python2 -DPYTHON_INCLUDE_DIR=/usr/include/python2.7 -DPYTHON_LIBRARY=/usr/lib/libpython2.7.so")
 
