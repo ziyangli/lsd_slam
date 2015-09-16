@@ -92,8 +92,6 @@ class DepthMap
   float nAvgUpdate, nAvgCreate, nAvgFinalize;
   float nAvgObserve, nAvgRegularize, nAvgPropagate, nAvgFillHoles, nAvgSetDepth;
 
-
-
   // pointer to global keyframe graph
   IndexThreadReduce threadReducer;
 
