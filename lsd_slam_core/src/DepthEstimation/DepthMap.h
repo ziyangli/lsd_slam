@@ -19,28 +19,24 @@
  */
 
 #pragma once
+#include <opencv2/core/core.hpp>
+
 #include "util/EigenCoreInclude.h"
-#include "opencv2/core/core.hpp"
 #include "util/settings.h"
 #include "util/IndexThreadReduce.h"
 #include "util/SophusUtil.h"
 
-
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class DepthMapPixelHypothesis;
 class Frame;
 class KeyFrameGraph;
 
-
 /**
  * Keeps a detailed depth map (consisting of DepthMapPixelHypothesis) and does
  * stereo comparisons and regularization to update it.
  */
-class DepthMap
-{
+class DepthMap {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -122,8 +118,6 @@ class DepthMap
   DepthMapPixelHypothesis* currentDepthMap;
   int* validityIntegralBuffer;
 
-
-
   // ============ internal functions ==================================================
   // does the line-stereo seeking.
   // takes a lot of parameters, because they all have been pre-computed before.
@@ -134,9 +128,7 @@ class DepthMap
       float &result_idepth, float &result_var, float &result_eplLength,
       RunningStats* const stats);
 
-
   void propagateDepth(Frame* new_keyframe);
-
 
   void observeDepth();
   void observeDepthRow(int yMin, int yMax, RunningStats* stats);
@@ -144,16 +136,13 @@ class DepthMap
   bool observeDepthUpdate(const int &x, const int &y, const int &idx, const float* keyFrameMaxGradBuf, RunningStats* const &stats);
   bool makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats);
 
-
   void regularizeDepthMap(bool removeOcclusion, int validityTH);
   template<bool removeOcclusions> void regularizeDepthMapRow(int validityTH, int yMin, int yMax, RunningStats* stats);
-
 
   void buildRegIntegralBuffer();
   void buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stats);
   void regularizeDepthMapFillHoles();
   void regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* stats);
-
 
   void resetCounters();
 

@@ -154,22 +154,23 @@ void Frame::setPermaRef(TrackingReference* reference) {
 }
 
 void Frame::calculateMeanInformation() {
+
   return;
 
-  if(numMappablePixels < 0)
-    maxGradients(0);
+  // if(numMappablePixels < 0)
+  //   maxGradients(0);
 
-  const float* idv = idepthVar(0);
-  const float* idv_max = idv + width(0)*height(0);
-  float sum = 0; int goodpx = 0;
-  for(const float* pt=idv; pt < idv_max; pt++) {
-    if(*pt > 0) {
-      sum += sqrtf(1.0f / *pt);
-      goodpx++;
-    }
-  }
+  // const float* idv = idepthVar(0);
+  // const float* idv_max = idv + width(0)*height(0);
+  // float sum = 0; int goodpx = 0;
+  // for(const float* pt=idv; pt < idv_max; pt++) {
+  //   if(*pt > 0) {
+  //     sum += sqrtf(1.0f / *pt);
+  //     goodpx++;
+  //   }
+  // }
 
-  meanInformation = sum / goodpx;
+  // meanInformation = sum / goodpx;
 }
 
 void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
@@ -177,7 +178,7 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
   boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-  if(data.idepth[0] == 0)
+  if (data.idepth[0] == 0)
     data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
   if(data.idepthVar[0] == 0)
     data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
@@ -288,23 +289,21 @@ void Frame::prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Ma
   referenceLevel = level;
 }
 
-void Frame::require(int dataFlags, int level)
-{
-  if ((dataFlags & IMAGE) && ! data.imageValid[level])
-  {
+void Frame::require(int dataFlags, int level) {
+  if ((dataFlags & IMAGE) && ! data.imageValid[level]) {
     buildImage(level);
   }
-  if ((dataFlags & GRADIENTS) && ! data.gradientsValid[level])
-  {
+
+  if ((dataFlags & GRADIENTS) && ! data.gradientsValid[level]) {
     buildGradients(level);
   }
-  if ((dataFlags & MAX_GRADIENTS) && ! data.maxGradientsValid[level])
-  {
+
+  if ((dataFlags & MAX_GRADIENTS) && ! data.maxGradientsValid[level]) {
     buildMaxGradients(level);
   }
+
   if (((dataFlags & IDEPTH) && ! data.idepthValid[level])
-      || ((dataFlags & IDEPTH_VAR) && ! data.idepthVarValid[level]))
-  {
+      || ((dataFlags & IDEPTH_VAR) && ! data.idepthVarValid[level])) {
     buildIDepthAndIDepthVar(level);
   }
 }

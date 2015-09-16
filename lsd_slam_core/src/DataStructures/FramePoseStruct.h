@@ -22,9 +22,10 @@
 #include "util/SophusUtil.h"
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
+
 class Frame;
+
 class FramePoseStruct {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -36,13 +37,12 @@ class FramePoseStruct {
   FramePoseStruct* trackingParent;
 
   // set initially as tracking result (then it's a SE(3)),
-  // and is changed only once, when the frame becomes a KF (->rescale).
-  Sim3 thisToParent_raw;
+  // and is changed only once, when the frame becomes a KF (->rescale)
 
+  Sim3 thisToParent_raw;
 
   int frameID;
   Frame* frame;
-
 
   // whether this poseStruct is registered in the Graph. if true MEMORY WILL BE HANDLED BY GRAPH
   bool isRegisteredToGraph;
@@ -60,7 +60,9 @@ class FramePoseStruct {
   void applyPoseGraphOptResult();
   Sim3 getCamToWorld(int recursionDepth = 0);
   void invalidateCache();
+
  private:
+
   int cacheValidFor;
   static int cacheValidCounter;
 

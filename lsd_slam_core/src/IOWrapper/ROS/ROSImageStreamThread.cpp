@@ -55,7 +55,7 @@ ROSImageStreamThread::~ROSImageStreamThread() {
 }
 
 void ROSImageStreamThread::setCalibration(std::string file) {
-  if(file == "") {
+  if (file == "") {
     ros::Subscriber info_sub = nh_.subscribe(nh_.resolveName("camera_info"), 1, &ROSImageStreamThread::infoCb, this);
 
     printf("WAITING for ROS camera calibration!\n");
