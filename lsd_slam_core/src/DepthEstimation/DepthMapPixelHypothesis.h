@@ -19,13 +19,13 @@
  */
 
 #pragma once
+
 #include <opencv2/core/core.hpp>
+
 #include "util/settings.h"
 #include "util/EigenCoreInclude.h"
 
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class KeyFrameGraph;
 
@@ -34,8 +34,7 @@ class KeyFrameGraph;
  *  Inverse depths need to be scaled with the DepthMap's internalScaleFactor to
  *  get frame scale. (From that, scale with the current keyframe's scale to
  *  get the current best estimate of absolute scale). */
-class DepthMapPixelHypothesis
-{
+class DepthMapPixelHypothesis {
  public:
 
   /** Flag telling if there is a valid estimate at this point.
@@ -58,7 +57,6 @@ class DepthMapPixelHypothesis
   /** Smoothed Gaussian Distribution.*/
   float idepth_smoothed;
   float idepth_var_smoothed;
-
 
   inline DepthMapPixelHypothesis() : isValid(false), blacklisted(0) {};
 

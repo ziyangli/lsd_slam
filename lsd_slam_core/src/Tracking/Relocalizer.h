@@ -19,21 +19,21 @@
 */
 
 #pragma once
-#include "util/settings.h"
-#include "boost/thread.hpp"
+
 #include <stdio.h>
 #include <iostream>
+
+#include <boost/thread.hpp>
+
+#include "util/settings.h"
 #include "util/SophusUtil.h"
 
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class Frame;
 class Sim3Tracker;
 
-class Relocalizer
-{
+class Relocalizer {
 public:
 	Relocalizer(int w, int h, Eigen::Matrix3f K);
 	~Relocalizer();
@@ -45,7 +45,8 @@ public:
 	bool waitResult(int milliseconds);
 	void getResult(Frame* &out_keyframe, std::shared_ptr<Frame> &frame, int &out_successfulFrameID, SE3 &out_frameToKeyframe);
 
-	bool isRunning;
+    bool isRunning;
+
 private:
 	int w, h;
 	Eigen::Matrix3f K;
@@ -70,7 +71,6 @@ private:
 	Frame* resultKF;
 	int resultFrameID;
 	SE3 resultFrameToKeyframe;
-
 
 	void threadLoop(int idx);
 };

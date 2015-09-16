@@ -20,15 +20,12 @@
 
 #pragma once
 
-#include "util/EigenCoreInclude.h"
 #include <opencv2/core/core.hpp>
+
+#include "util/EigenCoreInclude.h"
 #include "util/settings.h"
 
-
-
-namespace lsd_slam
-{
-
+namespace lsd_slam {
 
 typedef Eigen::Matrix<float, 6, 1> Vector6;
 typedef Eigen::Matrix<float, 6, 6> Matrix6x6;
@@ -39,11 +36,7 @@ typedef Eigen::Matrix<float, 7, 7> Matrix7x7;
 typedef Eigen::Matrix<float, 4, 1> Vector4;
 typedef Eigen::Matrix<float, 4, 4> Matrix4x4;
 
-
-
-
-class LGS4
-{
+class LGS4 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -53,8 +46,7 @@ public:
   float error;
   size_t num_constraints;
 
-  inline void initialize(const size_t maxnum_constraints)
-  {
+  inline void initialize(const size_t maxnum_constraints) {
     A.setZero();
     b.setZero();
     memset(SSEData,0, sizeof(float)*4*15);
@@ -62,8 +54,7 @@ public:
     this->num_constraints = 0;
   }
 
-  inline void finishNoDivide()
-  {
+  inline void finishNoDivide() {
 #if defined(ENABLE_SSE)
   	__m128 a;
 
@@ -79,9 +70,7 @@ public:
   	a = _mm_load_ps(SSEData+4*3);
   	A(3,0) = (A(0,3) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3));
 
-
-
-  	a = _mm_load_ps(SSEData+4*4);
+    a = _mm_load_ps(SSEData+4*4);
   	A(1,1) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
 
   	a = _mm_load_ps(SSEData+4*5);
@@ -90,21 +79,14 @@ public:
   	a = _mm_load_ps(SSEData+4*6);
   	A(1,3) = (A(3,1) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3));
 
-
-
-
   	a = _mm_load_ps(SSEData+4*7);
   	A(2,2) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
 
   	a = _mm_load_ps(SSEData+4*8);
   	A(2,3) = (A(3,2) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3));
 
-
-  	a = _mm_load_ps(SSEData+4*9);
+    a = _mm_load_ps(SSEData+4*9);
   	A(3,3) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
-
-
-
 
   	a = _mm_load_ps(SSEData+4*10);
   	b[0] -= SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
@@ -126,9 +108,9 @@ public:
 
 #if defined(ENABLE_SSE)
   inline void updateSSE(
-  		const __m128 &J1,const __m128 &J2,const __m128 &J3,const __m128 &J4,
-  		const __m128& res, const __m128& weight)
-  {
+        const __m128 &J1, const __m128 &J2,
+        const __m128 &J3, const __m128 &J4,
+        const __m128& res, const __m128& weight) {
 	  //A.noalias() += J * J.transpose() * weight;
 	  __m128 J1w = _mm_mul_ps(J1,weight);
 	  _mm_store_ps(SSEData+4*0, _mm_add_ps(_mm_load_ps(SSEData+4*0),_mm_mul_ps(J1w,J1)));
@@ -141,8 +123,7 @@ public:
 	  _mm_store_ps(SSEData+4*5, _mm_add_ps(_mm_load_ps(SSEData+4*5),_mm_mul_ps(J2w,J3)));
 	  _mm_store_ps(SSEData+4*6, _mm_add_ps(_mm_load_ps(SSEData+4*6),_mm_mul_ps(J2w,J4)));
 
-
-	  __m128 J3w = _mm_mul_ps(J3,weight);
+      __m128 J3w = _mm_mul_ps(J3,weight);
 	  _mm_store_ps(SSEData+4*7, _mm_add_ps(_mm_load_ps(SSEData+4*7),_mm_mul_ps(J3w,J3)));
 	  _mm_store_ps(SSEData+4*8, _mm_add_ps(_mm_load_ps(SSEData+4*8),_mm_mul_ps(J3w,J4)));
 
@@ -163,8 +144,7 @@ public:
   }
 #endif
 
-  inline void update(const Vector4& J, const float& res, const float& weight)
-  {
+  inline void update(const Vector4& J, const float& res, const float& weight) {
     A.noalias() += J * J.transpose() * weight;
     b.noalias() -= J * (res * weight);
     error += res * res * weight;
@@ -175,14 +155,11 @@ private:
   EIGEN_ALIGN16 float SSEData[4*15];
 };
 
-
-
 /**
  * Builds 4dof LGS (used for depth-lgs, at it has only 7 non-zero entries in jacobian)
  * only used to accumulate data, NOT really as LGS
  */
-class LGS6
-{
+class LGS6 {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -192,8 +169,7 @@ public:
   float error;
   size_t num_constraints;
 
-  inline void initialize(const size_t maxnum_constraints)
-  {
+  inline void initialize(const size_t maxnum_constraints) {
     A.setZero();
     b.setZero();
     memset(SSEData,0, sizeof(float)*4*28);
@@ -202,8 +178,7 @@ public:
     this->num_constraints = 0;
   }
 
-  inline void finishNoDivide()
-  {
+  inline void finishNoDivide() {
 
 #if defined(ENABLE_SSE)
   	__m128 a;
@@ -226,11 +201,6 @@ public:
   	a = _mm_load_ps(SSEData+4*5);
   	A(5,0) = (A(0,5) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3));
 
-
-
-
-
-
   	a = _mm_load_ps(SSEData+4*6);
   	A(1,1) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
 
@@ -246,9 +216,6 @@ public:
   	a = _mm_load_ps(SSEData+4*10);
   	A(1,5) = (A(5,1) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3));
 
-
-
-
   	a = _mm_load_ps(SSEData+4*11);
   	A(2,2) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
 
@@ -261,9 +228,7 @@ public:
   	a = _mm_load_ps(SSEData+4*14);
   	A(2,5) = (A(5,2) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3));
 
-
-
-  	a = _mm_load_ps(SSEData+4*15);
+    a = _mm_load_ps(SSEData+4*15);
   	A(3,3) += SSEE(a,0) + SSEE(a,1) + SSEE(a,2) + SSEE(a,3);
 
   	a = _mm_load_ps(SSEData+4*16);
@@ -316,8 +281,7 @@ public:
   }
 
 
-  void finish()
-  {
+  void finish() {
     finishNoDivide();
     A /= (float) num_constraints;
     b /= (float) num_constraints;
@@ -327,8 +291,7 @@ public:
 #if defined(ENABLE_SSE)
   inline void updateSSE(
   		const __m128 &J1,const __m128 &J2,const __m128 &J3,const __m128 &J4,const __m128 &J5,const __m128 &J6,
-  		const __m128& res, const __m128& weight)
-  {
+        const __m128& res, const __m128& weight) {
 	  //A.noalias() += J * J.transpose() * weight;
 	  __m128 J1w = _mm_mul_ps(J1,weight);
 	  _mm_store_ps(SSEData+4*0, _mm_add_ps(_mm_load_ps(SSEData+4*0),_mm_mul_ps(J1w,J1)));

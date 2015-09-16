@@ -22,21 +22,18 @@
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "DataStructures/Frame.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
-
-cv::Vec3b DepthMapPixelHypothesis::getVisualizationColor(int lastFrameID) const
-{
-  if(debugDisplay == 0 || debugDisplay == 1)
-  {
+cv::Vec3b DepthMapPixelHypothesis::getVisualizationColor(int lastFrameID) const {
+  if (debugDisplay == 0 || debugDisplay == 1) {
     float id;
-    if(debugDisplay == 0)
-      id= idepth_smoothed;
-    else // if(debugDisplay == 1)
-      id= idepth;
 
-    if(id < 0)
+    if (debugDisplay == 0)
+      id = idepth_smoothed;
+    else // if(debugDisplay == 1)
+      id = idepth;
+
+    if (id < 0)
       return cv::Vec3b(255,255,255);
 
     // rainbow between 0 and 4
@@ -52,35 +49,32 @@ cv::Vec3b DepthMapPixelHypothesis::getVisualizationColor(int lastFrameID) const
   }
 
   // plot validity counter
-  if(debugDisplay == 2)
-  {
+  if (debugDisplay == 2) {
     float f = validity_counter * (255.0 / (VALIDITY_COUNTER_MAX_VARIABLE+VALIDITY_COUNTER_MAX));
     uchar v = f < 0 ? 0 : (f > 255 ? 255 : f);
     return cv::Vec3b(0,v,v);
   }
 
   // plot var
-  if(debugDisplay == 3 || debugDisplay == 4)
-  {
+  if (debugDisplay == 3 || debugDisplay == 4) {
     float idv;
-    if(debugDisplay == 3)
-      idv= idepth_var_smoothed;
+    if (debugDisplay == 3)
+      idv = idepth_var_smoothed;
     else
-      idv= idepth_var;
+      idv = idepth_var;
 
     float var = - 0.5 * log10(idv);
 
     var = var*255*0.333;
-    if(var > 255) var = 255;
-    if(var < 0)
+    if (var > 255) var = 255;
+    if (var < 0)
       return cv::Vec3b(0,0, 255);
 
     return cv::Vec3b(255-var,var, 0);// bw
   }
 
   // plot skip
-  if(debugDisplay == 5)
-  {
+  if (debugDisplay == 5) {
     float f = (nextStereoFrameMinID - lastFrameID) * (255.0 / 100);
     uchar v = f < 0 ? 0 : (f > 255 ? 255 : f);
     return cv::Vec3b(v,0,v);

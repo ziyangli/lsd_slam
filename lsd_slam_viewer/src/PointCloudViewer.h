@@ -117,22 +117,20 @@ class AnimationObject {
     printf("read: %s\n",toString().c_str());
   }
 
-  bool operator < (const AnimationObject& other) const
-  {
+  bool operator < (const AnimationObject& other) const {
     return (time < other.time);
   }
 
-  std::string toString()
-  {
+  std::string toString() {
     char buf[1000];
 
-    int isSettings_i = isSettings;
+    int isSettings_i       = isSettings;
     int showLoopClosures_i = showLoopClosures;
-    int showKeyframes_i = showKeyframes;
-    int showCurrentCam_i = showCurrentCam;
-    int isFix_i = isFix;
+    int showKeyframes_i    = showKeyframes;
+    int showCurrentCam_i   = showCurrentCam;
+    int isFix_i            = isFix;
 
-    double x,y,z;
+    float x,y,z;
     frame.getPosition(x,y,z);
 
     snprintf(buf, 1000, "Animation: %d at %lf (dur %lf) S: %f %f %d %d %d %d %d Frame: %lf %lf %lf %lf %f %f %f %d",

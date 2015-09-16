@@ -312,15 +312,12 @@ void PointCloudViewer::keyPressEvent(QKeyEvent *e)
     case Qt::Key_K: // add keyframe item
       meddleMutex.lock();
 
-
-      double x,y,z;
+      float x,y,z;
       camera()->frame()->getPosition(x,y,z);
       animationList.push_back(AnimationObject(false, lastAnimTime, 2, qglviewer::Frame(qglviewer::Vec(0,0,0), camera()->frame()->orientation())));
       animationList.back().frame.setPosition(x,y,z);
       meddleMutex.unlock();
       printf("added KF: %s\n", animationList.back().toString().c_str());
-
-
 
       remakeAnimation();
 

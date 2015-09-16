@@ -134,24 +134,34 @@ void rosFileLoop(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 
-  printf("start");
+  printf("Started QApplication thread\n");
+  // Read command lines arguments.
+  QApplication application(argc,argv);
+
   // Instantiate the viewer.
   viewer = new PointCloudViewer();
 
+#if QT_VERSION < 0x040000
+  // Set the viewer as the application main widget.
+  application.setMainWidget(viewer);
+#else
   viewer->setWindowTitle("PointCloud Viewer");
+#endif
 
   // Make the viewer window visible on screen.
   viewer->show();
 
   boost::thread rosThread;
 
-  if(argc > 1) {
+  if (argc > 1) {
     rosThread = boost::thread(rosFileLoop, argc, argv);
   }
   else {
     // start ROS thread
     rosThread = boost::thread(rosThreadLoop, argc, argv);
   }
+
+  application.exec();
 
   printf("Shutting down... \n");
   ros::shutdown();

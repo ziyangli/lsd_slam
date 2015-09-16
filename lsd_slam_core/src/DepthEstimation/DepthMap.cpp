@@ -18,12 +18,12 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DepthEstimation/DepthMap.h"
-
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
 #include <opencv2/imgproc/imgproc.hpp>
+
+#include "DepthEstimation/DepthMap.h"
 
 #include "util/settings.h"
 #include "DepthEstimation/DepthMapPixelHypothesis.h"
@@ -32,14 +32,9 @@
 #include "IOWrapper/ImageDisplay.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 
+namespace lsd_slam {
 
-namespace lsd_slam
-{
-
-
-
-DepthMap::DepthMap(int w, int h, const Eigen::Matrix3f& K)
-{
+DepthMap::DepthMap(int w, int h, const Eigen::Matrix3f& K) {
   width = w;
   height = h;
 
@@ -50,14 +45,10 @@ DepthMap::DepthMap(int w, int h, const Eigen::Matrix3f& K)
 
   validityIntegralBuffer = (int*)Eigen::internal::aligned_malloc(width*height*sizeof(int));
 
-
-
-
   debugImageHypothesisHandling = cv::Mat(h,w, CV_8UC3);
   debugImageHypothesisPropagation = cv::Mat(h,w, CV_8UC3);
   debugImageStereoLines = cv::Mat(h,w, CV_8UC3);
   debugImageDepth = cv::Mat(h,w, CV_8UC3);
-
 
   this->K = K;
   fx = K(0,0);
@@ -82,9 +73,8 @@ DepthMap::DepthMap(int w, int h, const Eigen::Matrix3f& K)
   nAvgObserve = nAvgRegularize = nAvgPropagate = nAvgFillHoles = nAvgSetDepth = 0;
 }
 
-DepthMap::~DepthMap()
-{
-  if(activeKeyFrame != 0)
+DepthMap::~DepthMap() {
+  if (activeKeyFrame != 0)
     activeKeyFramelock.unlock();
 
   debugImageHypothesisHandling.release();
@@ -98,59 +88,50 @@ DepthMap::~DepthMap()
   Eigen::internal::aligned_free((void*)validityIntegralBuffer);
 }
 
-
-void DepthMap::reset()
-{
-  for(DepthMapPixelHypothesis* pt = otherDepthMap+width*height-1; pt >= otherDepthMap; pt--)
+void DepthMap::reset() {
+  for (DepthMapPixelHypothesis* pt = otherDepthMap+width*height-1; pt >= otherDepthMap; pt--)
     pt->isValid = false;
-  for(DepthMapPixelHypothesis* pt = currentDepthMap+width*height-1; pt >= currentDepthMap; pt--)
+
+  for (DepthMapPixelHypothesis* pt = currentDepthMap+width*height-1; pt >= currentDepthMap; pt--)
     pt->isValid = false;
 }
 
-
-void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats)
-{
+void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats) {
   const float* keyFrameMaxGradBuf = activeKeyFrame->maxGradients(0);
 
   int successes = 0;
 
-  for(int y=yMin;y<yMax; y++)
-    for(int x=3;x<width-3;x++)
-    {
+  for (int y = yMin; y < yMax; y++)
+    for (int x = 3; x < width-3; x++) {
       int idx = x+y*width;
       DepthMapPixelHypothesis* target = currentDepthMap+idx;
       bool hasHypothesis = target->isValid;
 
       // ======== 1. check absolute grad =========
-      if(hasHypothesis && keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE)
-      {
+      if (hasHypothesis && keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE) {
         target->isValid = false;
         continue;
       }
 
-      if(keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_CREATE || target->blacklisted < MIN_BLACKLIST)
+      if (keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_CREATE || target->blacklisted < MIN_BLACKLIST)
         continue;
 
-
       bool success;
-      if(!hasHypothesis)
+      if (!hasHypothesis)
         success = observeDepthCreate(x, y, idx, stats);
       else
         success = observeDepthUpdate(x, y, idx, keyFrameMaxGradBuf, stats);
 
-      if(success)
+      if (success)
         successes++;
     }
-
-
 }
-void DepthMap::observeDepth()
-{
+
+void DepthMap::observeDepth() {
 
   threadReducer.reduce(boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3, height-3, 10);
 
-  if(enablePrintDebugInfo && printObserveStatistics)
-  {
+  if (enablePrintDebugInfo && printObserveStatistics) {
     printf("OBSERVE (%d): %d / %d created; %d / %d updated; %d skipped; %d init-blacklisted\n",
            activeKeyFrame->id(),
            runningStats.num_observe_created,
@@ -162,9 +143,7 @@ void DepthMap::observeDepth()
            );
   }
 
-
-  if(enablePrintDebugInfo && printObservePurgeStatistics)
-  {
+  if (enablePrintDebugInfo && printObservePurgeStatistics) {
     printf("OBS-PRG (%d): Good: %d; inconsistent: %d; notfound: %d; oob: %d; failed: %d; addSkip: %d;\n",
            activeKeyFrame->id(),
            runningStats.num_observe_good,
@@ -177,12 +156,7 @@ void DepthMap::observeDepth()
   }
 }
 
-
-
-
-
-bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats)
-{
+bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats) {
   int idx = x+y*width;
 
   // ======= make epl ========
@@ -191,18 +165,16 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
   float epx = - fx * ref->thisToOther_t[0] + ref->thisToOther_t[2]*(x - cx);
   float epy = - fy * ref->thisToOther_t[1] + ref->thisToOther_t[2]*(y - cy);
 
-  if(isnanf(epx+epy))
+  if (isnanf(epx+epy))
     return false;
-
 
   // ======== check epl length =========
   float eplLengthSquared = epx*epx+epy*epy;
-  if(eplLengthSquared < MIN_EPL_LENGTH_SQUARED)
-  {
-    if(enablePrintDebugInfo) stats->num_observe_skipped_small_epl++;
+  if (eplLengthSquared < MIN_EPL_LENGTH_SQUARED) {
+    if (enablePrintDebugInfo)
+      stats->num_observe_skipped_small_epl++;
     return false;
   }
-
 
   // ===== check epl-grad magnitude ======
   float gx = activeKeyFrameImageData[idx+1] - activeKeyFrameImageData[idx-1];
@@ -210,20 +182,17 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
   float eplGradSquared = gx * epx + gy * epy;
   eplGradSquared = eplGradSquared*eplGradSquared / eplLengthSquared;    // square and norm with epl-length
 
-  if(eplGradSquared < MIN_EPL_GRAD_SQUARED)
-  {
-    if(enablePrintDebugInfo) stats->num_observe_skipped_small_epl_grad++;
+  if (eplGradSquared < MIN_EPL_GRAD_SQUARED) {
+    if (enablePrintDebugInfo) stats->num_observe_skipped_small_epl_grad++;
     return false;
   }
-
 
   // ===== check epl-grad angle ======
-  if(eplGradSquared / (gx*gx+gy*gy) < MIN_EPL_ANGLE_SQUARED)
-  {
-    if(enablePrintDebugInfo) stats->num_observe_skipped_small_epl_angle++;
+  if (eplGradSquared / (gx*gx+gy*gy) < MIN_EPL_ANGLE_SQUARED) {
+    if (enablePrintDebugInfo)
+      stats->num_observe_skipped_small_epl_angle++;
     return false;
   }
-
 
   // ===== DONE - return "normalized" epl =====
   float fac = GRADIENT_SAMPLE_DIST / sqrt(eplLengthSquared);
@@ -233,19 +202,15 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
   return true;
 }
 
-
-bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats)
-{
+bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats) {
   DepthMapPixelHypothesis* target = currentDepthMap+idx;
 
   Frame* refFrame = activeKeyFrameIsReactivated ? newest_referenceFrame : oldest_referenceFrame;
 
-  if(refFrame->getTrackingParent() == activeKeyFrame)
-  {
+  if(refFrame->getTrackingParent() == activeKeyFrame) {
     bool* wasGoodDuringTracking = refFrame->refPixelWasGoodNoCreate();
-    if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
-    {
-      if(plotStereoImages)
+    if (wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)]) {
+      if (plotStereoImages)
         debugImageHypothesisHandling.at<cv::Vec3b>(y, x) = cv::Vec3b(255,0,0); // BLUE for SKIPPED NOT GOOD TRACKED
       return false;
     }
@@ -253,9 +218,10 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
 
   float epx, epy;
   bool isGood = makeAndCheckEPL(x, y, refFrame, &epx, &epy, stats);
-  if(!isGood) return false;
+  if (!isGood) return false;
 
-  if(enablePrintDebugInfo) stats->num_observe_create_attempted++;
+  if (enablePrintDebugInfo)
+    stats->num_observe_create_attempted++;
 
   float new_u = x;
   float new_v = y;
@@ -266,13 +232,13 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
       refFrame, refFrame->image(0),
       result_idepth, result_var, result_eplLength, stats);
 
-  if(error == -3 || error == -2)
-  {
+  if (error == -3 || error == -2) {
     target->blacklisted--;
-    if(enablePrintDebugInfo) stats->num_observe_blacklisted++;
+    if (enablePrintDebugInfo)
+      stats->num_observe_blacklisted++;
   }
 
-  if(error < 0 || result_var > MAX_VAR)
+  if (error < 0 || result_var > MAX_VAR)
     return false;
 
   result_idepth = UNZERO(result_idepth);
