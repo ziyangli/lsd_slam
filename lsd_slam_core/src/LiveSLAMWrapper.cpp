@@ -75,6 +75,7 @@ LiveSLAMWrapper::~LiveSLAMWrapper() {
 }
 
 void LiveSLAMWrapper::Loop() {
+
   while (true) {
 
     // wait till image is ready
@@ -103,8 +104,8 @@ void LiveSLAMWrapper::Loop() {
   }
 }
 
-
 void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime) {
+
   imageSeqNumber++;
 
   // Convert image to grayscale, if necessary

@@ -60,22 +60,23 @@ SlamSystem::SlamSystem(int w, int h,
     assert(false);
   }
 
-  this->width    = w;
-  this->height   = h;
-  this->K        = K;
-  trackingIsGood = true;
+  this->width                    = w;
+  this->height                   = h;
+  this->K                        = K;
+  trackingIsGood                 = true;
 
-  currentKeyFrame                =  nullptr;
+  currentKeyFrame                = nullptr;
   trackingReferenceFrameSharedPT = nullptr;
   keyFrameGraph                  = new KeyFrameGraph();
   createNewKeyFrame              = false;
 
-  map = new DepthMap(w,h,K);
+  map                            = new DepthMap(w, h, K);
 
-  newConstraintAdded = false;
+  newConstraintAdded             = false;
   haveUnmergedOptimizationOffset = false;
 
-  tracker = new SE3Tracker(w,h,K);
+  tracker                        = new SE3Tracker(w, h, K);
+
   // Do not use more than 4 levels for odometry tracking
   for (int level = 4; level < PYRAMID_LEVELS; ++level)
     tracker->settings.maxItsPerLvl[level] = 0;
@@ -84,9 +85,9 @@ SlamSystem::SlamSystem(int w, int h,
   mappingTrackingReference = new TrackingReference();
 
   if (SLAMEnabled) {
-    trackableKeyFrameSearch    = new TrackableKeyFrameSearch(keyFrameGraph,w,h,K);
-    constraintTracker          = new Sim3Tracker(w,h,K);
-    constraintSE3Tracker       = new SE3Tracker(w,h,K);
+    trackableKeyFrameSearch    = new TrackableKeyFrameSearch(keyFrameGraph, w, h, K);
+    constraintTracker          = new Sim3Tracker(w, h, K);
+    constraintSE3Tracker       = new SE3Tracker(w, h, K);
     newKFTrackingReference     = new TrackingReference();
     candidateTrackingReference = new TrackingReference();
   }
@@ -107,7 +108,7 @@ SlamSystem::SlamSystem(int w, int h,
 
   thread_mapping = boost::thread(&SlamSystem::mappingThreadLoop, this);
 
-  if(SLAMEnabled) {
+  if (SLAMEnabled) {
     thread_constraint_search = boost::thread(&SlamSystem::constraintSearchThreadLoop, this);
     thread_optimization = boost::thread(&SlamSystem::optimizationThreadLoop, this);
   }
@@ -854,13 +855,12 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 
 }
 
-void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp)
-{
+void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp) {
+
   // Create new frame
   std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));
 
-  if(!trackingIsGood)
-  {
+  if (!trackingIsGood) {
     relocalizer.updateCurrentFrame(trackingNewFrame);
 
     unmappedTrackedFramesMutex.lock();
