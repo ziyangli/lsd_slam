@@ -265,16 +265,13 @@ void Frame::setDepthFromGroundTruth(const float* depth, float cov_scale)
   data.hasIDepthBeenSet = true;
 }
 
-void Frame::prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Matrix3f& K, const int level)
-{
+void Frame::prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Matrix3f& K, const int level) {
   Sim3 otherToThis = thisToOther.inverse();
 
   //otherToThis = data.worldToCam * other->data.camToWorld;
   K_otherToThis_R = K * otherToThis.rotationMatrix().cast<float>() * otherToThis.scale();
   otherToThis_t = otherToThis.translation().cast<float>();
   K_otherToThis_t = K * otherToThis_t;
-
-
 
   thisToOther_t = thisToOther.translation().cast<float>();
   K_thisToOther_t = K * thisToOther_t;

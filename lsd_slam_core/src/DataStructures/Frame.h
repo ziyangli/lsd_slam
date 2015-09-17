@@ -167,13 +167,13 @@ class Frame {
   float distSquared;
   Eigen::Matrix3f K_otherToThis_R;
   Eigen::Vector3f K_otherToThis_t;
-  Eigen::Vector3f otherToThis_t;
   Eigen::Vector3f K_thisToOther_t;
   Eigen::Matrix3f thisToOther_R;
+  Eigen::Vector3f thisToOther_t;
+  Eigen::Vector3f otherToThis_t;
   Eigen::Vector3f otherToThis_R_row0;
   Eigen::Vector3f otherToThis_R_row1;
   Eigen::Vector3f otherToThis_R_row2;
-  Eigen::Vector3f thisToOther_t;
 
   // statistics
   float initialTrackedResidual;

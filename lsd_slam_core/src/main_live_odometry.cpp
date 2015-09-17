@@ -33,6 +33,7 @@
 #include <X11/Xlib.h>  // interesting, have to be at the end?
 
 using namespace lsd_slam;
+
 int main(int argc, char** argv) {
   XInitThreads();
 
@@ -44,7 +45,7 @@ int main(int argc, char** argv) {
   dynamic_reconfigure::Server<lsd_slam_core::LSDDebugParamsConfig> srvDebug(ros::NodeHandle("~Debug"));
   srvDebug.setCallback(dynConfCbDebug);
 
-  packagePath = ros::package::getPath("lsd_slam_core")+"/";
+  packagePath = ros::package::getPath("lsd_slam_core") + "/";
 
   InputImageStream* inputStream = new ROSImageStreamThread();
 

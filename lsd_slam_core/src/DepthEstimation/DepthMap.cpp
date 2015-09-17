@@ -104,7 +104,7 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats) {
   for (int y = yMin; y < yMax; y++)
     for (int x = 3; x < width-3; x++) {
       int idx = x+y*width;
-      DepthMapPixelHypothesis* target = currentDepthMap+idx;
+      DepthMapPixelHypothesis* target = currentDepthMap + idx;
       bool hasHypothesis = target->isValid;
 
       // ======== 1. check absolute grad =========
@@ -157,7 +157,7 @@ void DepthMap::observeDepth() {
 }
 
 bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats) {
-  int idx = x+y*width;
+  int idx = x + y*width;
 
   // ======= make epl ========
   // calculate the plane spanned by the two camera centers and the point (x,y,1)
@@ -169,7 +169,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
     return false;
 
   // ======== check epl length =========
-  float eplLengthSquared = epx*epx+epy*epy;
+  float eplLengthSquared = epx*epx + epy*epy;
   if (eplLengthSquared < MIN_EPL_LENGTH_SQUARED) {
     if (enablePrintDebugInfo)
       stats->num_observe_skipped_small_epl++;
@@ -177,8 +177,8 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
   }
 
   // ===== check epl-grad magnitude ======
-  float gx = activeKeyFrameImageData[idx+1] - activeKeyFrameImageData[idx-1];
-  float gy = activeKeyFrameImageData[idx+width] - activeKeyFrameImageData[idx-width];
+  float gx = activeKeyFrameImageData[idx + 1] - activeKeyFrameImageData[idx - 1];
+  float gy = activeKeyFrameImageData[idx + width] - activeKeyFrameImageData[idx - width];
   float eplGradSquared = gx * epx + gy * epy;
   eplGradSquared = eplGradSquared*eplGradSquared / eplLengthSquared;    // square and norm with epl-length
 
@@ -203,11 +203,11 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
 }
 
 bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats) {
-  DepthMapPixelHypothesis* target = currentDepthMap+idx;
+  DepthMapPixelHypothesis* target = currentDepthMap + idx;
 
   Frame* refFrame = activeKeyFrameIsReactivated ? newest_referenceFrame : oldest_referenceFrame;
 
-  if(refFrame->getTrackingParent() == activeKeyFrame) {
+  if (refFrame->getTrackingParent() == activeKeyFrame) {
     bool* wasGoodDuringTracking = refFrame->refPixelWasGoodNoCreate();
     if (wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)]) {
       if (plotStereoImages)
@@ -227,7 +227,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
   float new_v = y;
   float result_idepth, result_var, result_eplLength;
   float error = doLineStereo(
-      new_u,new_v,epx,epy,
+      new_u, new_v, epx, epy,
       0.0f, 1.0f, 1.0f/MIN_DEPTH,
       refFrame, refFrame->image(0),
       result_idepth, result_var, result_eplLength, stats);
@@ -282,13 +282,10 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
   else
     refFrame = newest_referenceFrame;
 
-
-  if(refFrame->getTrackingParent() == activeKeyFrame)
-  {
+  if (refFrame->getTrackingParent() == activeKeyFrame) {
     bool* wasGoodDuringTracking = refFrame->refPixelWasGoodNoCreate();
-    if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
-    {
-      if(plotStereoImages)
+    if (wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)]) {
+      if (plotStereoImages)
         debugImageHypothesisHandling.at<cv::Vec3b>(y, x) = cv::Vec3b(255,0,0); // BLUE for SKIPPED NOT GOOD TRACKED
       return false;
     }
@@ -296,35 +293,33 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 
   float epx, epy;
   bool isGood = makeAndCheckEPL(x, y, refFrame, &epx, &epy, stats);
-  if(!isGood) return false;
+  if (!isGood) return false;
 
   // which exact point to track, and where from.
   float sv = sqrt(target->idepth_var_smoothed);
   float min_idepth = target->idepth_smoothed - sv*STEREO_EPL_VAR_FAC;
   float max_idepth = target->idepth_smoothed + sv*STEREO_EPL_VAR_FAC;
-  if(min_idepth < 0) min_idepth = 0;
-  if(max_idepth > 1/MIN_DEPTH) max_idepth = 1/MIN_DEPTH;
+  if (min_idepth < 0) min_idepth = 0;
+  if (max_idepth > 1/MIN_DEPTH) max_idepth = 1/MIN_DEPTH;
 
   stats->num_observe_update_attempted++;
 
   float result_idepth, result_var, result_eplLength;
 
   float error = doLineStereo(
-      x,y,epx,epy,
+      x, y, epx, epy,
       min_idepth, target->idepth_smoothed ,max_idepth,
       refFrame, refFrame->image(0),
       result_idepth, result_var, result_eplLength, stats);
 
   float diff = result_idepth - target->idepth_smoothed;
 
-
   // if oob: (really out of bounds)
-  if(error == -1)
-  {
+  if (error == -1) {
     // do nothing, pixel got oob, but is still in bounds in original. I will want to try again.
-    if(enablePrintDebugInfo) stats->num_observe_skip_oob++;
+    if (enablePrintDebugInfo) stats->num_observe_skip_oob++;
 
-    if(plotStereoImages)
+    if (plotStereoImages)
       debugImageHypothesisHandling.at<cv::Vec3b>(y, x) = cv::Vec3b(0,0,255);    // RED FOR OOB
     return false;
   }
@@ -881,10 +876,7 @@ void DepthMap::initializeRandomly(Frame* new_frame)
   activeKeyFrame->setDepth(currentDepthMap);
 }
 
-
-
-void DepthMap::setFromExistingKF(Frame* kf)
-{
+void DepthMap::setFromExistingKF(Frame* kf) {
   assert(kf->hasIDepthBeenSet());
 
   activeKeyFramelock = kf->getActiveLock();
@@ -900,19 +892,12 @@ void DepthMap::setFromExistingKF(Frame* kf)
   activeKeyFrameImageData = activeKeyFrame->image(0);
   activeKeyFrameIsReactivated = true;
 
-  for(int y=0;y<height;y++)
-  {
-    for(int x=0;x<width;x++)
-    {
-      if(*idepthVar > 0)
-      {
-        *pt = DepthMapPixelHypothesis(
-            *idepth,
-            *idepthVar,
-            *validity);
+  for(int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      if (*idepthVar > 0) {
+        *pt = DepthMapPixelHypothesis(*idepth, *idepthVar, *validity);
       }
-      else
-      {
+      else {
         currentDepthMap[x+y*width].isValid = false;
         currentDepthMap[x+y*width].blacklisted = (*idepthVar == -2) ? MIN_BLACKLIST-1 : 0;
       }
@@ -926,7 +911,6 @@ void DepthMap::setFromExistingKF(Frame* kf)
 
   regularizeDepthMap(false, VAL_SUM_MIN_FOR_KEEP);
 }
-
 
 void DepthMap::initializeFromGTDepth(Frame* new_frame)
 {
@@ -956,14 +940,11 @@ void DepthMap::initializeFromGTDepth(Frame* new_frame)
   }
 
 
-  for(int y=0;y<height;y++)
-  {
-    for(int x=0;x<width;x++)
-    {
+  for(int y=0; y < height; y++) {
+    for (int x=0; x < width; x++) {
       float idepthValue = idepth[x+y*width];
 
-      if(!isnanf(idepthValue) && idepthValue > 0)
-      {
+      if (!isnanf(idepthValue) && idepthValue > 0) {
         currentDepthMap[x+y*width] = DepthMapPixelHypothesis(
             idepthValue,
             idepthValue,
@@ -971,8 +952,7 @@ void DepthMap::initializeFromGTDepth(Frame* new_frame)
             VAR_GT_INIT_INITIAL,
             20);
       }
-      else
-      {
+      else {
         currentDepthMap[x+y*width].isValid = false;
         currentDepthMap[x+y*width].blacklisted = 0;
       }
@@ -983,60 +963,55 @@ void DepthMap::initializeFromGTDepth(Frame* new_frame)
   activeKeyFrame->setDepth(currentDepthMap);
 }
 
-void DepthMap::resetCounters()
-{
-  runningStats.num_stereo_comparisons=0;
-  runningStats.num_pixelInterpolations=0;
-  runningStats.num_stereo_calls = 0;
+void DepthMap::resetCounters() {
+  runningStats.num_stereo_comparisons                = 0;
+  runningStats.num_pixelInterpolations               = 0;
 
-  runningStats.num_stereo_rescale_oob = 0;
-  runningStats.num_stereo_inf_oob = 0;
-  runningStats.num_stereo_near_oob = 0;
-  runningStats.num_stereo_invalid_unclear_winner = 0;
-  runningStats.num_stereo_invalid_atEnd = 0;
+  runningStats.num_stereo_calls                      = 0;
+  runningStats.num_stereo_rescale_oob                = 0;
+  runningStats.num_stereo_inf_oob                    = 0;
+  runningStats.num_stereo_near_oob                   = 0;
+  runningStats.num_stereo_invalid_unclear_winner     = 0;
+  runningStats.num_stereo_invalid_atEnd              = 0;
   runningStats.num_stereo_invalid_inexistantCrossing = 0;
-  runningStats.num_stereo_invalid_twoCrossing = 0;
-  runningStats.num_stereo_invalid_noCrossing = 0;
-  runningStats.num_stereo_invalid_bigErr = 0;
-  runningStats.num_stereo_interpPre = 0;
-  runningStats.num_stereo_interpPost = 0;
-  runningStats.num_stereo_interpNone = 0;
-  runningStats.num_stereo_negative = 0;
-  runningStats.num_stereo_successfull = 0;
+  runningStats.num_stereo_invalid_twoCrossing        = 0;
+  runningStats.num_stereo_invalid_noCrossing         = 0;
+  runningStats.num_stereo_invalid_bigErr             = 0;
+  runningStats.num_stereo_interpPre                  = 0;
+  runningStats.num_stereo_interpPost                 = 0;
+  runningStats.num_stereo_interpNone                 = 0;
+  runningStats.num_stereo_negative                   = 0;
+  runningStats.num_stereo_successfull                = 0;
 
-  runningStats.num_observe_created=0;
-  runningStats.num_observe_create_attempted=0;
-  runningStats.num_observe_updated=0;
-  runningStats.num_observe_update_attempted=0;
-  runningStats.num_observe_skipped_small_epl=0;
-  runningStats.num_observe_skipped_small_epl_grad=0;
-  runningStats.num_observe_skipped_small_epl_angle=0;
-  runningStats.num_observe_transit_finalizing=0;
-  runningStats.num_observe_transit_idle_oob=0;
-  runningStats.num_observe_transit_idle_scale_angle=0;
-  runningStats.num_observe_trans_idle_exhausted=0;
-  runningStats.num_observe_inconsistent_finalizing=0;
-  runningStats.num_observe_inconsistent=0;
-  runningStats.num_observe_notfound_finalizing2=0;
-  runningStats.num_observe_notfound_finalizing=0;
-  runningStats.num_observe_notfound=0;
-  runningStats.num_observe_skip_fail=0;
-  runningStats.num_observe_skip_oob=0;
-  runningStats.num_observe_good=0;
-  runningStats.num_observe_good_finalizing=0;
-  runningStats.num_observe_state_finalizing=0;
-  runningStats.num_observe_state_initializing=0;
-  runningStats.num_observe_skip_alreadyGood=0;
-  runningStats.num_observe_addSkip=0;
+  runningStats.num_observe_created                   = 0;
+  runningStats.num_observe_create_attempted          = 0;
+  runningStats.num_observe_updated                   = 0;
+  runningStats.num_observe_update_attempted          = 0;
+  runningStats.num_observe_skipped_small_epl         = 0;
+  runningStats.num_observe_skipped_small_epl_grad    = 0;
+  runningStats.num_observe_skipped_small_epl_angle   = 0;
+  runningStats.num_observe_transit_finalizing        = 0;
+  runningStats.num_observe_transit_idle_oob          = 0;
+  runningStats.num_observe_transit_idle_scale_angle  = 0;
+  runningStats.num_observe_trans_idle_exhausted      = 0;
+  runningStats.num_observe_inconsistent_finalizing   = 0;
+  runningStats.num_observe_inconsistent              = 0;
+  runningStats.num_observe_notfound_finalizing2      = 0;
+  runningStats.num_observe_notfound_finalizing       = 0;
+  runningStats.num_observe_notfound                  = 0;
+  runningStats.num_observe_skip_fail                 = 0;
+  runningStats.num_observe_skip_oob                  = 0;
+  runningStats.num_observe_good                      = 0;
+  runningStats.num_observe_good_finalizing           = 0;
+  runningStats.num_observe_state_finalizing          = 0;
+  runningStats.num_observe_state_initializing        = 0;
+  runningStats.num_observe_skip_alreadyGood          = 0;
+  runningStats.num_observe_addSkip                   = 0;
 
-
-  runningStats.num_observe_blacklisted=0;
+  runningStats.num_observe_blacklisted               = 0;
 }
 
-
-
-void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFrames)
-{
+void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFrames) {
   assert(isValid());
 
   struct timeval tv_start_all, tv_end_all;
@@ -1047,34 +1022,30 @@ void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFram
   referenceFrameByID.clear();
   referenceFrameByID_offset = oldest_referenceFrame->id();
 
-  for(std::shared_ptr<Frame> frame : referenceFrames)
-  {
+  for (std::shared_ptr<Frame> frame : referenceFrames) {
     assert(frame->hasTrackingParent());
 
-    if(frame->getTrackingParent() != activeKeyFrame)
-    {
+    if (frame->getTrackingParent() != activeKeyFrame) {
       printf("WARNING: updating frame %d with %d, which was tracked on a different frame (%d).\nWhile this should work, it is not recommended.",
              activeKeyFrame->id(), frame->id(),
              frame->getTrackingParent()->id());
     }
 
     Sim3 refToKf;
-    if(frame->pose->trackingParent->frameID == activeKeyFrame->id())
+    if (frame->pose->trackingParent->frameID == activeKeyFrame->id())
       refToKf = frame->pose->thisToParent_raw;
     else
       refToKf = activeKeyFrame->getScaledCamToWorld().inverse() *  frame->getScaledCamToWorld();
 
     frame->prepareForStereoWith(activeKeyFrame, refToKf, K, 0);
 
-    while((int)referenceFrameByID.size() + referenceFrameByID_offset <= frame->id())
+    while ((int)referenceFrameByID.size() + referenceFrameByID_offset <= frame->id())
       referenceFrameByID.push_back(frame.get());
   }
 
   resetCounters();
 
-
-  if(plotStereoImages)
-  {
+  if (plotStereoImages) {
     cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(), CV_32F, const_cast<float*>(activeKeyFrameImageData));
     keyFrameImage.convertTo(debugImageHypothesisHandling, CV_8UC1);
     cv::cvtColor(debugImageHypothesisHandling, debugImageHypothesisHandling, CV_GRAY2RGB);
@@ -1087,7 +1058,6 @@ void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFram
   }
 
   struct timeval tv_start, tv_end;
-
 
   gettimeofday(&tv_start, NULL);
   observeDepth();
@@ -1127,18 +1097,14 @@ void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFram
   msUpdate = 0.9*msUpdate + 0.1*((tv_end_all.tv_sec-tv_start_all.tv_sec)*1000.0f + (tv_end_all.tv_usec-tv_start_all.tv_usec)/1000.0f);
   nUpdate++;
 
-
   activeKeyFrame->numMappedOnThis++;
   activeKeyFrame->numMappedOnThisTotal++;
-
 
   if(plotStereoImages)
   {
     Util::displayImage( "Stereo Key Frame", debugImageHypothesisHandling, false );
     Util::displayImage( "Stereo Reference Frame", debugImageStereoLines, false );
   }
-
-
 
   if(enablePrintDebugInfo && printLineStereoStatistics)
   {
@@ -1393,9 +1359,6 @@ int DepthMap::debugPlotDepthMap()
   return 1;
 }
 
-
-
-
 // find pixel in image (do stereo along epipolar line).
 // mat: NEW image
 // KinvP: point in OLD image (Kinv * (u_old, v_old, 1)), projected
@@ -1410,9 +1373,8 @@ inline float DepthMap::doLineStereo(
     const float min_idepth, const float prior_idepth, float max_idepth,
     const Frame* const referenceFrame, const float* referenceFrameImage,
     float &result_idepth, float &result_var, float &result_eplLength,
-    RunningStats* stats)
-{
-  if(enablePrintDebugInfo) stats->num_stereo_calls++;
+    RunningStats* stats) {
+  if (enablePrintDebugInfo) stats->num_stereo_calls++;
 
   // calculate epipolar line start and end point in old image
   Eigen::Vector3f KinvP = Eigen::Vector3f(fxi*u+cxi,fyi*v+cyi,1.0f);
@@ -1433,9 +1395,8 @@ inline float DepthMap::doLineStereo(
     return -1;
   }
 
-  if(!(rescaleFactor > 0.7f && rescaleFactor < 1.4f))
-  {
-    if(enablePrintDebugInfo) stats->num_stereo_rescale_oob++;
+  if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
+    if (enablePrintDebugInfo) stats->num_stereo_rescale_oob++;
     return -1;
   }
 
@@ -1446,16 +1407,12 @@ inline float DepthMap::doLineStereo(
   float realVal_m2 = getInterpolatedElement(activeKeyFrameImageData,u - 2*epxn*rescaleFactor, v - 2*epyn*rescaleFactor, width);
   float realVal_p2 = getInterpolatedElement(activeKeyFrameImageData,u + 2*epxn*rescaleFactor, v + 2*epyn*rescaleFactor, width);
 
-
-
   //    if(referenceFrame->K_otherToThis_t[2] * max_idepth + pInf[2] < 0.01)
-
 
   Eigen::Vector3f pClose = pInf + referenceFrame->K_otherToThis_t*max_idepth;
   // if the assumed close-point lies behind the
   // image, have to change that.
-  if(pClose[2] < 0.001f)
-  {
+  if (pClose[2] < 0.001f) {
     max_idepth = (0.001f-pInf[2]) / referenceFrame->K_otherToThis_t[2];
     pClose = pInf + referenceFrame->K_otherToThis_t*max_idepth;
   }
@@ -1464,16 +1421,14 @@ inline float DepthMap::doLineStereo(
   Eigen::Vector3f pFar = pInf + referenceFrame->K_otherToThis_t*min_idepth;
   // if the assumed far-point lies behind the image or closter than the near-point,
   // we moved past the Point it and should stop.
-  if(pFar[2] < 0.001f || max_idepth < min_idepth)
-  {
+  if (pFar[2] < 0.001f || max_idepth < min_idepth) {
     if(enablePrintDebugInfo) stats->num_stereo_inf_oob++;
     return -1;
   }
   pFar = pFar / pFar[2]; // pos in new image of point (xy), assuming min_idepth
 
-
   // check for nan due to eg division by zero.
-  if(isnanf((float)(pFar[0]+pClose[0])))
+  if (isnanf((float)(pFar[0]+pClose[0])))
     return -4;
 
   // calculate increments in which we will step through the epipolar line.
@@ -1511,7 +1466,7 @@ inline float DepthMap::doLineStereo(
     pClose[1] += incy*pad;
   }
 
-  // if inf point is outside of image: skip pixel.
+  // if far point is outside of image: skip pixel.
   if(
          pFar[0] <= SAMPLE_POINT_TO_BORDER ||
          pFar[0] >= width-SAMPLE_POINT_TO_BORDER ||
@@ -1521,8 +1476,6 @@ inline float DepthMap::doLineStereo(
     if(enablePrintDebugInfo) stats->num_stereo_inf_oob++;
     return -1;
   }
-
-
 
   // if near point is outside: move inside, and test length again.
   if(
@@ -1584,8 +1537,6 @@ inline float DepthMap::doLineStereo(
   // - p0: search end-point
   // - incx, incy: search steps in pixel
   // - eplLength, min_idepth, max_idepth: determines search-resolution, i.e. the result's variance.
-
-
   float cpx = pFar[0];
   float cpy =  pFar[1];
 
@@ -1594,8 +1545,6 @@ inline float DepthMap::doLineStereo(
   float val_cp = getInterpolatedElement(referenceFrameImage,cpx, cpy, width);
   float val_cp_p1 = getInterpolatedElement(referenceFrameImage,cpx+incx, cpy+incy, width);
   float val_cp_p2;
-
-
 
   /*
    * Subsequent exact minimum is found the following way:
@@ -1615,7 +1564,6 @@ inline float DepthMap::doLineStereo(
    *    and sum(e_i * e_{i-1}) and sum(e_i * e_{i+1}),
    *    where i is the respective winning index.
    */
-
 
   // walk in equally sized steps, starting at depth=infinity.
   int loopCounter = 0;
