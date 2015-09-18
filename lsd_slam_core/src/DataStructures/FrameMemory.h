@@ -20,9 +20,7 @@
 
 #pragma once
 
-
 #include <list>
-#include <deque>
 #include <vector>
 #include <unordered_map>
 
@@ -47,8 +45,7 @@ class FrameMemory {
    * Corresponds to "buffer = new float[size]". */
   float* getFloatBuffer(unsigned int size);
 
-  /** Allocates or fetches a buffer with length: size * sizeof(float).
-   * Corresponds to "buffer = new float[size]". */
+  /** Allocates or fetches a buffer with length: sizeInByte **/
   void* getBuffer(unsigned int sizeInByte);
 
   /** Returns an allocated buffer back to the global storage for re-use.
@@ -59,15 +56,15 @@ class FrameMemory {
   void deactivateFrame(Frame* frame);
   void pruneActiveFrames();
 
-  void releaseBuffes();
+  void releaseBuffers();
 
  private:
   FrameMemory();
   void* allocateBuffer(unsigned int sizeInByte);
 
   boost::mutex accessMutex;
-  std::unordered_map< void*, unsigned int > bufferSizes;
-  std::unordered_map< unsigned int, std::vector< void* > > availableBuffers;
+  std::unordered_map<void*, unsigned int> bufferSizes;
+  std::unordered_map<unsigned int, std::vector<void*> > availableBuffers;
 
   boost::mutex activeFramesMutex;
   std::list<Frame*> activeFrames;

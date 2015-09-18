@@ -165,7 +165,7 @@ SlamSystem::~SlamSystem() {
   // delte keyframe graph
   delete keyFrameGraph;
 
-  FrameMemory::getInstance().releaseBuffes();
+  FrameMemory::getInstance().releaseBuffers();
 
   Util::closeAllWindows();
 }

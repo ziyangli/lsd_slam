@@ -342,12 +342,10 @@ void Frame::release(int dataFlags, bool pyramidsOnly, bool invalidateOnly)
   }
 }
 
-bool Frame::minimizeInMemory()
-{
-  if(activeMutex.timed_lock(boost::posix_time::milliseconds(10)))
-  {
+bool Frame::minimizeInMemory() {
+  if (activeMutex.timed_lock(boost::posix_time::milliseconds(10))) {
     buildMutex.lock();
-    if(enablePrintDebugInfo && printMemoryDebugInfo)
+    if (enablePrintDebugInfo && printMemoryDebugInfo)
       printf("minimizing frame %d\n",id());
 
     release(IMAGE | IDEPTH | IDEPTH_VAR, true, false);
@@ -356,6 +354,8 @@ bool Frame::minimizeInMemory()
     clear_refPixelWasGood();
 
     buildMutex.unlock();
+
+    // manaully unlock here!!!
     activeMutex.unlock();
     return true;
   }

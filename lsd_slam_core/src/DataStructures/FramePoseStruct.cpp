@@ -18,11 +18,12 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DataStructures/FramePoseStruct.h"
 #include "DataStructures/Frame.h"
+#include "DataStructures/FramePoseStruct.h"
 
 namespace lsd_slam {
 
+// this is how a static member inited.
 int FramePoseStruct::cacheValidCounter = 0;
 
 int privateFramePoseStructAllocCount = 0;

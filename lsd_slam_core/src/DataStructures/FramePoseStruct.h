@@ -19,6 +19,9 @@
  */
 
 #pragma once
+
+#include <Eigen/Core> //For EIGEN MACRO
+
 #include "util/SophusUtil.h"
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
 
@@ -38,10 +41,9 @@ class FramePoseStruct {
 
   // set initially as tracking result (then it's a SE(3)),
   // and is changed only once, when the frame becomes a KF (->rescale)
-
   Sim3 thisToParent_raw;
 
-  int frameID;
+  int    frameID;
   Frame* frame;
 
   // whether this poseStruct is registered in the Graph. if true MEMORY WILL BE HANDLED BY GRAPH

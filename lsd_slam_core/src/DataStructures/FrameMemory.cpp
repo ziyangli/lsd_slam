@@ -18,11 +18,17 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DataStructures/FrameMemory.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/lock_types.hpp>
+
 #include "DataStructures/Frame.h"
+#include "DataStructures/FrameMemory.h"
 
 namespace lsd_slam {
 
+// constructor, not in the header at all!!!
 FrameMemory::FrameMemory() { }
 
 FrameMemory& FrameMemory::getInstance() {
@@ -30,13 +36,14 @@ FrameMemory& FrameMemory::getInstance() {
   return theOneAndOnly;
 }
 
-void FrameMemory::releaseBuffes() {
+void FrameMemory::releaseBuffers() {
   boost::unique_lock<boost::mutex> lock(accessMutex);
   int total = 0;
 
   for (auto p : availableBuffers) {
     if (printMemoryDebugInfo)
-      printf("deleting %d buffers of size %d!\n", (int)p.second.size(), (int)p.first);
+      printf("deleting %d buffers of size %d!\n",
+             (int)p.second.size(), (int)p.first);
 
     total += p.second.size() * p.first;
 
@@ -57,7 +64,7 @@ void* FrameMemory::getBuffer(unsigned int sizeInByte) {
   boost::unique_lock<boost::mutex> lock(accessMutex);
 
   if (availableBuffers.count(sizeInByte) > 0) {
-    std::vector< void* >& availableOfSize = availableBuffers.at(sizeInByte);
+    std::vector<void*>& availableOfSize = availableBuffers.at(sizeInByte);
 
     if (availableOfSize.empty()) {
       void* buffer = allocateBuffer(sizeInByte);
@@ -115,6 +122,7 @@ boost::shared_lock<boost::shared_mutex> FrameMemory::activateFrame(Frame* frame)
   frame->isActive = true;
   return boost::shared_lock<boost::shared_mutex>(frame->activeMutex);
 }
+
 void FrameMemory::deactivateFrame(Frame* frame) {
   boost::unique_lock<boost::mutex> lock(activeFramesMutex);
   if (!frame->isActive) return;
