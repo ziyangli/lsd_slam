@@ -22,23 +22,19 @@
 #define _TIME_STAMPED_OBJECT_HPP_
 
 #include <chrono>
-
 #include <opencv2/core/core.hpp>
 
 #include "IOWrapper/Timestamp.h"
 
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 template<typename T>
-struct TimestampedObject
-{
+struct TimestampedObject {
   T data;
   Timestamp timestamp;
 };
 
 typedef TimestampedObject< cv::Mat > TimestampedMat;
-
 }
+
 #endif

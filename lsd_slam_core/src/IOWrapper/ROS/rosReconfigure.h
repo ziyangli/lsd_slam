@@ -26,8 +26,7 @@
 #include "lsd_slam_core/LSDDebugParamsConfig.h"
 #include "util/settings.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 void dynConfCbDebug(lsd_slam_core::LSDDebugParamsConfig &config, uint32_t level) {
     freeDebugParam1             = config.freeDebugParam1;

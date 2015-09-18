@@ -27,27 +27,19 @@ namespace cv {
 class Mat;
 }
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class Frame;
 
 class KeyFrameGraph;
 class Frame;
 
-
-
 /**
  * Virtual 3D display object.
  */
-class Output3DWrapper
-{
+class Output3DWrapper {
  public:
   virtual ~Output3DWrapper() {};
-
-
-
-
 
   virtual void publishKeyframeGraph(KeyFrameGraph* graph) {};
 

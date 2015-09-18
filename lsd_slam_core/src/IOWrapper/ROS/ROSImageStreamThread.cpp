@@ -114,7 +114,7 @@ void ROSImageStreamThread::vidCb(const sensor_msgs::ImageConstPtr img) {
   else
     bufferItem.timestamp = Timestamp(ros::Time::now().toSec());
 
-  if(undistorter != 0) {
+  if (undistorter != 0) {
     assert(undistorter->isValid());
     undistorter->undistort(cv_ptr->image,bufferItem.data);
   }

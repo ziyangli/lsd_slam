@@ -138,19 +138,28 @@ class Frame {
    * generally, everything is stored relative to the frame
    */
   FramePoseStruct* pose;
-  Sim3 getScaledCamToWorld(int num=0) { return pose->getCamToWorld();}
-  bool hasTrackingParent() { return pose->trackingParent != nullptr;}
-  Frame* getTrackingParent() { return pose->trackingParent->frame;}
+
+  Sim3 getScaledCamToWorld(int num = 0) {
+    return pose->getCamToWorld();
+  }
+
+  bool hasTrackingParent() {
+    return pose->trackingParent != nullptr;
+  }
+
+  Frame* getTrackingParent() {
+    return pose->trackingParent->frame;
+  }
 
   Sim3 lastConstraintTrackedCamToWorld;
 
-  /** Pointers to all adjacent Frames in graph. empty for non-keyframes.*/
-  std::unordered_set< Frame*, std::hash<Frame*>, std::equal_to<Frame*>,
-                      Eigen::aligned_allocator< Frame* > > neighbors;
+  /** Pointers to all adjacent Frames in graph. empty for non-keyframes. */
+  std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>,
+                     Eigen::aligned_allocator<Frame*> > neighbors;
 
   /** Multi-Map indicating for which other keyframes with which initialization tracking failed.*/
-  std::unordered_multimap< Frame*, Sim3, std::hash<Frame*>, std::equal_to<Frame*>,
-                           Eigen::aligned_allocator< std::pair<const Frame*,Sim3> > > trackingFailed;
+  std::unordered_multimap<Frame*, Sim3, std::hash<Frame*>, std::equal_to<Frame*>,
+                          Eigen::aligned_allocator<std::pair<const Frame*, Sim3> > > trackingFailed;
 
   // flag set when depth is updated.
   bool depthHasBeenUpdatedFlag;
@@ -338,7 +347,7 @@ inline const Eigen::Vector4f* Frame::gradients(int level) {
 }
 
 inline const float* Frame::maxGradients(int level) {
-  if (! data.maxGradientsValid[level])
+  if (!data.maxGradientsValid[level])
     require(MAX_GRADIENTS, level);
   return data.maxGradients[level];
 }

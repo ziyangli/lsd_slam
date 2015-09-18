@@ -25,8 +25,6 @@
 #include <chrono>
 #include <boost/thread/mutex.hpp>
 
-
-
 // TODO: remove this hack
 namespace std {
 namespace chrono {
@@ -36,16 +34,12 @@ namespace chrono {
 }
 }
 
-
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 /**
  * Represents a specific point in time.
  */
-class Timestamp
-{
+class Timestamp {
  public:
   /**
    * Creates an uninitialized timestamp.
