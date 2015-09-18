@@ -173,8 +173,8 @@ class SlamSystem {
   boost::condition_variable newKeyFrameCreatedSignal;
 
   // SET & READ EVERYWHERE
-  std::shared_ptr<Frame> currentKeyFrame;   // changed (and, for VO, maybe deleted)  only by Mapping thread within exclusive lock.
-  std::shared_ptr<Frame> trackingReferenceFrameSharedPT;    // only used in odometry-mode, to keep a keyframe alive until it is deleted. ONLY accessed whithin currentKeyFrameMutex lock.
+  std::shared_ptr<Frame> currentKeyFrame; // changed (and, for VO, maybe deleted)  only by Mapping thread within exclusive lock.
+  std::shared_ptr<Frame> trackingReferenceFrameSharedPT; // only used in odometry-mode, to keep a keyframe alive until it is deleted. ONLY accessed whithin currentKeyFrameMutex lock.
   boost::mutex currentKeyFrameMutex;
 
   // threads

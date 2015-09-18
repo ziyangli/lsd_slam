@@ -56,18 +56,14 @@ void printMessageOnCVImage(cv::Mat &image, std::string line1,std::string line2)
 	    CV_FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(200,200,250), 1, 8);
 }
 
-
-cv::Mat getDepthRainbowPlot(Frame* kf, int lvl)
-{
+cv::Mat getDepthRainbowPlot(Frame* kf, int lvl) {
 	return getDepthRainbowPlot(kf->idepth(lvl), kf->idepthVar(lvl), kf->image(lvl),
 			kf->width(lvl), kf->height(lvl));
 }
 
-cv::Mat getDepthRainbowPlot(const float* idepth, const float* idepthVar, const float* gray, int width, int height)
-{
+cv::Mat getDepthRainbowPlot(const float* idepth, const float* idepthVar, const float* gray, int width, int height) {
 	cv::Mat res = cv::Mat(height,width,CV_8UC3);
-	if(gray != 0)
-	{
+    if (gray != 0) {
 		cv::Mat keyFrameImage(height, width, CV_32F, const_cast<float*>(gray));
 		cv::Mat keyFrameImage8u;
 		keyFrameImage.convertTo(keyFrameImage8u, CV_8UC1);
@@ -98,26 +94,21 @@ cv::Mat getDepthRainbowPlot(const float* idepth, const float* idepthVar, const f
 		}
 	return res;
 }
-cv::Mat getVarRedGreenPlot(const float* idepthVar, const float* gray, int width, int height)
-{
+cv::Mat getVarRedGreenPlot(const float* idepthVar, const float* gray, int width, int height) {
 	float* idepthVarExt = (float*)Eigen::internal::aligned_malloc(width*height*sizeof(float));
 
-	memcpy(idepthVarExt,idepthVar,sizeof(float)*width*height);
+    memcpy(idepthVarExt, idepthVar, sizeof(float)*width*height);
 
-	for(int i=2;i<width-2;i++)
-		for(int j=2;j<height-2;j++)
-		{
-			if(idepthVar[(i) + width*(j)] <= 0)
+    for (int i = 2; i < width - 2; i++)
+        for (int j = 2; j < height-2; j++) {
+            if (idepthVar[(i) + width*(j)] <= 0)
 				idepthVarExt[(i) + width*(j)] = -1;
-			else
-			{
+            else {
 				float sumIvar = 0;
 				float numIvar = 0;
-				for(int dx=-2; dx <=2; dx++)
-					for(int dy=-2; dy <=2; dy++)
-					{
-						if(idepthVar[(i+dx) + width*(j+dy)] > 0)
-						{
+                for (int dx = -2; dx <= 2; dx++)
+                    for (int dy = -2; dy <= 2; dy++) {
+                        if (idepthVar[(i+dx) + width*(j+dy)] > 0) {
 							float distFac = (float)(dx*dx+dy*dy)*(0.075*0.075)*0.02;
 							float ivar = 1.0f/(idepthVar[(i+dx) + width*(j+dy)] + distFac);
 							sumIvar += ivar;
@@ -127,28 +118,24 @@ cv::Mat getVarRedGreenPlot(const float* idepthVar, const float* gray, int width,
 				idepthVarExt[(i) + width*(j)] = numIvar / sumIvar;
 			}
 
-		}
+        }
 
-
-	cv::Mat res = cv::Mat(height,width,CV_8UC3);
-	if(gray != 0)
-	{
+    cv::Mat res = cv::Mat(height, width, CV_8UC3);
+    if (gray != 0) {
 		cv::Mat keyFrameImage(height, width, CV_32F, const_cast<float*>(gray));
 		cv::Mat keyFrameImage8u;
 		keyFrameImage.convertTo(keyFrameImage8u, CV_8UC1);
 		cv::cvtColor(keyFrameImage8u, res, CV_GRAY2RGB);
 	}
 	else
-		fillCvMat(&res,cv::Vec3b(255,170,168));
+        fillCvMat(&res,cv::Vec3b(255, 170, 168));
 
 	for(int i=0;i<width;i++)
-		for(int j=0;j<height;j++)
-		{
+        for(int j=0;j<height;j++) {
 			float idv = idepthVarExt[i + j*width];
 
-			if(idv > 0)
-			{
-				float var= sqrt(idv);
+            if (idv > 0)	{
+                float var = sqrt(idv);
 
 				var = var*60*255*0.5 - 20;
 				if(var > 255) var = 255;

@@ -36,6 +36,8 @@ namespace lsd_slam {
 LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper) {
   this->imageStream   = imageStream;
   this->outputWrapper = outputWrapper;
+
+  // ?
   imageStream->getBuffer()->setReceiver(this);
 
   fx     = imageStream->fx();
@@ -62,12 +64,11 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
   imageSeqNumber = 0;
 }
 
-
 LiveSLAMWrapper::~LiveSLAMWrapper() {
-  if(monoOdometry != 0)
+  if (monoOdometry != 0)
     delete monoOdometry;
 
-  if(outFile != 0) {
+  if (outFile != 0) {
     outFile->flush();
     outFile->close();
     delete outFile;
@@ -87,8 +88,7 @@ void LiveSLAMWrapper::Loop() {
     }
     waitLock.unlock();
 
-
-    if(fullResetRequested) {
+    if (fullResetRequested) {
       resetAll();
       fullResetRequested = false;
       if (!(imageStream->getBuffer()->size() > 0))
@@ -120,7 +120,7 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime) {
   assert(fx != 0 || fy != 0);
 
   // need to initialize
-  if(!isInitialized) {
+  if (!isInitialized) {
     monoOdometry->randomInit(grayImg.data, imgTime.toSec(), 1);
     isInitialized = true;
   }

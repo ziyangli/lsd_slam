@@ -52,8 +52,7 @@
 
 #include "util/globalFuncs.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 
 KFConstraintStruct::~KFConstraintStruct()
@@ -62,9 +61,7 @@ KFConstraintStruct::~KFConstraintStruct()
     delete edge;
 }
 
-KeyFrameGraph::KeyFrameGraph()
-    : nextEdgeId(0)
-{
+KeyFrameGraph::KeyFrameGraph() : nextEdgeId(0) {
   typedef g2o::BlockSolver_7_3 BlockSolver;
   typedef g2o::LinearSolverCSparse<BlockSolver::PoseMatrixType> LinearSolver;
   //typedef g2o::LinearSolverPCG<BlockSolver::PoseMatrixType> LinearSolver;

@@ -65,14 +65,14 @@ void ROSOutput3DWrapper::publishKeyframe(Frame* f) {
 
   boost::shared_lock<boost::shared_mutex> lock = f->getActiveLock();
 
-  fMsg.id = f->id();
-  fMsg.time = f->timestamp();
+  fMsg.id         = f->id();
+  fMsg.time       = f->timestamp();
   fMsg.isKeyframe = true;
 
   int w = f->width(publishLvl);
   int h = f->height(publishLvl);
 
-  memcpy(fMsg.camToWorld.data(),f->getScaledCamToWorld().cast<float>().data(),sizeof(float)*7);
+  memcpy(fMsg.camToWorld.data(), f->getScaledCamToWorld().cast<float>().data(), sizeof(float)*7);
   fMsg.fx = f->fx(publishLvl);
   fMsg.fy = f->fy(publishLvl);
   fMsg.cx = f->cx(publishLvl);
@@ -84,17 +84,17 @@ void ROSOutput3DWrapper::publishKeyframe(Frame* f) {
 
   InputPointDense* pc = (InputPointDense*)fMsg.pointcloud.data();
 
-  const float* idepth = f->idepth(publishLvl);
+  const float* idepth    = f->idepth(publishLvl);
   const float* idepthVar = f->idepthVar(publishLvl);
-  const float* color = f->image(publishLvl);
+  const float* color     = f->image(publishLvl);
 
-  for(int idx = 0; idx < w*h; idx++) {
-    pc[idx].idepth = idepth[idx];
+  for (int idx = 0; idx < w*h; idx++) {
+    pc[idx].idepth     = idepth[idx];
     pc[idx].idepth_var = idepthVar[idx];
-    pc[idx].color[0] = color[idx];
-    pc[idx].color[1] = color[idx];
-    pc[idx].color[2] = color[idx];
-    pc[idx].color[3] = color[idx];
+    pc[idx].color[0]   = color[idx];
+    pc[idx].color[1]   = color[idx];
+    pc[idx].color[2]   = color[idx];
+    pc[idx].color[3]   = color[idx];
   }
 
   keyframe_publisher.publish(fMsg);
@@ -103,11 +103,11 @@ void ROSOutput3DWrapper::publishKeyframe(Frame* f) {
 void ROSOutput3DWrapper::publishTrackedFrame(Frame* kf) {
   lsd_slam_viewer::keyframeMsg fMsg;
 
-  fMsg.id = kf->id();
-  fMsg.time = kf->timestamp();
+  fMsg.id         = kf->id();
+  fMsg.time       = kf->timestamp();
   fMsg.isKeyframe = false;
 
-  memcpy(fMsg.camToWorld.data(),kf->getScaledCamToWorld().cast<float>().data(),sizeof(float)*7);
+  memcpy(fMsg.camToWorld.data(), kf->getScaledCamToWorld().cast<float>().data(), sizeof(float)*7);
   fMsg.fx = kf->fx(publishLvl);
   fMsg.fy = kf->fy(publishLvl);
   fMsg.cx = kf->cx(publishLvl);
@@ -123,9 +123,9 @@ void ROSOutput3DWrapper::publishTrackedFrame(Frame* kf) {
 
   geometry_msgs::PoseStamped pMsg;
 
-  pMsg.pose.position.x = camToWorld.translation()[0];
-  pMsg.pose.position.y = camToWorld.translation()[1];
-  pMsg.pose.position.z = camToWorld.translation()[2];
+  pMsg.pose.position.x    = camToWorld.translation()[0];
+  pMsg.pose.position.y    = camToWorld.translation()[1];
+  pMsg.pose.position.z    = camToWorld.translation()[2];
   pMsg.pose.orientation.x = camToWorld.so3().unit_quaternion().x();
   pMsg.pose.orientation.y = camToWorld.so3().unit_quaternion().y();
   pMsg.pose.orientation.z = camToWorld.so3().unit_quaternion().z();
@@ -150,11 +150,12 @@ void ROSOutput3DWrapper::publishKeyframeGraph(KeyFrameGraph* graph) {
   gMsg.numConstraints = graph->edgesAll.size();
   gMsg.constraintsData.resize(gMsg.numConstraints * sizeof(GraphConstraint));
   GraphConstraint* constraintData = (GraphConstraint*)gMsg.constraintsData.data();
-  for(unsigned int i = 0; i < graph->edgesAll.size(); i++) {
+
+  for (unsigned int i = 0; i < graph->edgesAll.size(); i++) {
     constraintData[i].from = graph->edgesAll[i]->firstFrame->id();
-    constraintData[i].to = graph->edgesAll[i]->secondFrame->id();
-    Sophus::Vector7d err = graph->edgesAll[i]->edge->error();
-    constraintData[i].err = sqrt(err.dot(err));
+    constraintData[i].to   = graph->edgesAll[i]->secondFrame->id();
+    Sophus::Vector7d err   = graph->edgesAll[i]->edge->error();
+    constraintData[i].err  = sqrt(err.dot(err));
   }
   graph->edgesListsMutex.unlock();
 
@@ -162,10 +163,12 @@ void ROSOutput3DWrapper::publishKeyframeGraph(KeyFrameGraph* graph) {
   gMsg.numFrames = graph->keyframesAll.size();
   gMsg.frameData.resize(gMsg.numFrames * sizeof(GraphFramePose));
   GraphFramePose* framePoseData = (GraphFramePose*)gMsg.frameData.data();
-  for(unsigned int i=0; i < graph->keyframesAll.size(); i++) {
+
+  for (unsigned int i = 0; i < graph->keyframesAll.size(); i++) {
     framePoseData[i].id = graph->keyframesAll[i]->id();
-    memcpy(framePoseData[i].camToWorld, graph->keyframesAll[i]->getScaledCamToWorld().cast<float>().data(),sizeof(float)*7);
+    memcpy(framePoseData[i].camToWorld, graph->keyframesAll[i]->getScaledCamToWorld().cast<float>().data(), sizeof(float)*7);
   }
+
   graph->keyframesAllMutex.unlock_shared();
 
   graph_publisher.publish(gMsg);
@@ -181,7 +184,7 @@ void ROSOutput3DWrapper::publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> p
 
 void ROSOutput3DWrapper::publishDebugInfo(Eigen::Matrix<float, 20, 1> data) {
   std_msgs::Float32MultiArray msg;
-  for(int i=0;i<20;i++)
+  for (int i = 0; i < 20; i++)
     msg.data.push_back((float)(data[i]));
 
   debugInfo_publisher.publish(msg);

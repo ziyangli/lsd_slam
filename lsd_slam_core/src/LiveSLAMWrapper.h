@@ -82,8 +82,6 @@ struct LiveSLAMWrapper : public Notifiable
   // initialization stuff
   bool isInitialized;
 
-
-
   // monoOdometry
   SlamSystem* monoOdometry;
 

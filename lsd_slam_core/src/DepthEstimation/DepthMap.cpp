@@ -840,9 +840,7 @@ void DepthMap::regularizeDepthMap(bool removeOcclusions, int validityTH)
            runningStats.num_reg_created);
 }
 
-
-void DepthMap::initializeRandomly(Frame* new_frame)
-{
+void DepthMap::initializeRandomly(Frame* new_frame) {
   activeKeyFramelock = new_frame->getActiveLock();
   activeKeyFrame = new_frame;
   activeKeyFrameImageData = activeKeyFrame->image(0);
@@ -850,12 +848,9 @@ void DepthMap::initializeRandomly(Frame* new_frame)
 
   const float* maxGradients = new_frame->maxGradients();
 
-  for(int y=1;y<height-1;y++)
-  {
-    for(int x=1;x<width-1;x++)
-    {
-      if(maxGradients[x+y*width] > MIN_ABS_GRAD_CREATE)
-      {
+  for (int y = 1; y < height-1; y++) {
+    for (int x = 1; x < width-1; x++) {
+      if (maxGradients[x+y*width] > MIN_ABS_GRAD_CREATE) {
         float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
         currentDepthMap[x+y*width] = DepthMapPixelHypothesis(
             idepth,
@@ -864,14 +859,12 @@ void DepthMap::initializeRandomly(Frame* new_frame)
             VAR_RANDOM_INIT_INITIAL,
             20);
       }
-      else
-      {
+      else {
         currentDepthMap[x+y*width].isValid = false;
         currentDepthMap[x+y*width].blacklisted = 0;
       }
     }
   }
-
 
   activeKeyFrame->setDepth(currentDepthMap);
 }

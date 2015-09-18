@@ -18,11 +18,11 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <deque>
-
 // for mkdir
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include <deque>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -44,7 +44,7 @@
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
 #include "IOWrapper/ImageDisplay.h"
 #include "IOWrapper/Output3DWrapper.h"
-#include <g2o/core/robust_kernel_impl.h>
+#include "g2o/core/robust_kernel_impl.h"
 #include "DataStructures/FrameMemory.h"
 
 using namespace lsd_slam;
@@ -53,7 +53,7 @@ using namespace lsd_slam;
 SlamSystem::SlamSystem(int w, int h,
                        Eigen::Matrix3f K, bool enableSLAM) :
     SLAMEnabled(enableSLAM),
-    relocalizer(w,h,K) {
+    relocalizer(w, h, K) {
 
   if (w%16 != 0 || h%16!=0) {
     printf("image dimensions must be multiples of 16! Please crop your images / video accordingly.\n");
@@ -81,30 +81,28 @@ SlamSystem::SlamSystem(int w, int h,
   for (int level = 4; level < PYRAMID_LEVELS; ++level)
     tracker->settings.maxItsPerLvl[level] = 0;
 
-  trackingReference        = new TrackingReference();
-  mappingTrackingReference = new TrackingReference();
+  trackingReference              = new TrackingReference();
+  mappingTrackingReference       = new TrackingReference();
 
+  constraintSE3Tracker           = nullptr;
+  constraintTracker              = nullptr;
+  newKFTrackingReference         = nullptr;
+  candidateTrackingReference     = nullptr;
+  trackableKeyFrameSearch        = nullptr;
   if (SLAMEnabled) {
-    trackableKeyFrameSearch    = new TrackableKeyFrameSearch(keyFrameGraph, w, h, K);
-    constraintTracker          = new Sim3Tracker(w, h, K);
-    constraintSE3Tracker       = new SE3Tracker(w, h, K);
-    newKFTrackingReference     = new TrackingReference();
-    candidateTrackingReference = new TrackingReference();
-  }
-  else {
-    constraintSE3Tracker       = 0;
-    trackableKeyFrameSearch    = 0;
-    constraintTracker          = 0;
-    newKFTrackingReference     = 0;
-    candidateTrackingReference = 0;
+    constraintSE3Tracker         = new SE3Tracker(w, h, K);
+    constraintTracker            = new Sim3Tracker(w, h, K);
+    newKFTrackingReference       = new TrackingReference();
+    candidateTrackingReference   = new TrackingReference();
+    trackableKeyFrameSearch      = new TrackableKeyFrameSearch(keyFrameGraph, w, h, K);
   }
 
-  outputWrapper = 0;
+  outputWrapper                  = 0;
 
-  keepRunning                = true;
-  doFinalOptimization        = false;
-  depthMapScreenshotFlag     = false;
-  lastTrackingClosenessScore = 0;
+  keepRunning                    = true;
+  doFinalOptimization            = false;
+  depthMapScreenshotFlag         = false;
+  lastTrackingClosenessScore     = 0;
 
   thread_mapping = boost::thread(&SlamSystem::mappingThreadLoop, this);
 
@@ -113,6 +111,7 @@ SlamSystem::SlamSystem(int w, int h,
     thread_optimization = boost::thread(&SlamSystem::optimizationThreadLoop, this);
   }
 
+  // debug info
   msTrackFrame = msOptimizationIteration = msFindConstraintsItaration = msFindReferences = 0;
   nTrackFrame = nOptimizationIteration = nFindConstraintsItaration = nFindReferences = 0;
   nAvgTrackFrame = nAvgOptimizationIteration = nAvgFindConstraintsItaration = nAvgFindReferences = 0;
@@ -822,13 +821,11 @@ void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int i
 }
 
 
-void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
-{
+void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
   printf("Doing Random initialization!\n");
 
-  if(!doMapping)
+  if (!doMapping)
     printf("WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.\n");
-
 
   currentKeyFrameMutex.lock();
 
@@ -838,21 +835,19 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id)
 
   currentKeyFrameMutex.unlock();
 
-  if(doSlam)
-  {
+  if (doSlam) {
     keyFrameGraph->idToKeyFrameMutex.lock();
     keyFrameGraph->idToKeyFrame.insert(std::make_pair(currentKeyFrame->id(), currentKeyFrame));
     keyFrameGraph->idToKeyFrameMutex.unlock();
   }
-  if(continuousPCOutput && outputWrapper != 0) outputWrapper->publishKeyframe(currentKeyFrame.get());
 
+  if (continuousPCOutput && outputWrapper != 0)
+    outputWrapper->publishKeyframe(currentKeyFrame.get());
 
   if (displayDepthMap || depthMapScreenshotFlag)
     debugDisplayDepthMap();
 
-
   printf("Done Random initialization!\n");
-
 }
 
 void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp) {

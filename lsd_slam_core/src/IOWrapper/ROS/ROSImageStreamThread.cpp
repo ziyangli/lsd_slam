@@ -69,7 +69,7 @@ void ROSImageStreamThread::setCalibration(std::string file) {
   else {
     undistorter = Undistorter::getUndistorterForFile(file.c_str());
 
-    if(undistorter == 0) {
+    if (undistorter == 0) {
       printf("Failed to read camera calibration from file... wrong syntax?\n");
       exit(0);
     }
