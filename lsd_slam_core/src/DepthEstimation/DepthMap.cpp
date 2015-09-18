@@ -38,17 +38,18 @@ DepthMap::DepthMap(int w, int h, const Eigen::Matrix3f& K) {
   width = w;
   height = h;
 
-  activeKeyFrame = 0;
+  activeKeyFrame              = 0;
   activeKeyFrameIsReactivated = false;
-  otherDepthMap = new DepthMapPixelHypothesis[width*height];
+
+  otherDepthMap   = new DepthMapPixelHypothesis[width*height];
   currentDepthMap = new DepthMapPixelHypothesis[width*height];
 
   validityIntegralBuffer = (int*)Eigen::internal::aligned_malloc(width*height*sizeof(int));
 
-  debugImageHypothesisHandling = cv::Mat(h,w, CV_8UC3);
+  debugImageHypothesisHandling    = cv::Mat(h,w, CV_8UC3);
   debugImageHypothesisPropagation = cv::Mat(h,w, CV_8UC3);
-  debugImageStereoLines = cv::Mat(h,w, CV_8UC3);
-  debugImageDepth = cv::Mat(h,w, CV_8UC3);
+  debugImageStereoLines           = cv::Mat(h,w, CV_8UC3);
+  debugImageDepth                 = cv::Mat(h,w, CV_8UC3);
 
   this->K = K;
   fx = K(0,0);
@@ -473,10 +474,6 @@ void DepthMap::propagateDepth(Frame* new_keyframe)
   const float* newKFMaxGrad = new_keyframe->maxGradients(0);
   const float* newKFImageData = new_keyframe->image(0);
 
-
-
-
-
   // go through all pixels of OLD image, propagating forwards.
   for(int y=0;y<height;y++)
     for(int x=0;x<width;x++)
@@ -539,7 +536,6 @@ void DepthMap::propagateDepth(Frame* new_keyframe)
       idepth_ratio_4 *= idepth_ratio_4;
 
       float new_var =idepth_ratio_4*source->idepth_var;
-
 
       // check for occlusion
       if(targetBest->isValid)
@@ -663,7 +659,6 @@ void DepthMap::regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* 
   }
 }
 
-
 void DepthMap::regularizeDepthMapFillHoles()
 {
 
@@ -713,8 +708,6 @@ void DepthMap::buildRegIntegralBuffer()
     *(validityIntegralBufferPT_T++) += *(validityIntegralBufferPT++);
 
 }
-
-
 
 template<bool removeOcclusions> void DepthMap::regularizeDepthMapRow(int validityTH, int yMin, int yMax, RunningStats* stats)
 {
@@ -841,12 +834,13 @@ void DepthMap::regularizeDepthMap(bool removeOcclusions, int validityTH)
 }
 
 void DepthMap::initializeRandomly(Frame* new_frame) {
-  activeKeyFramelock = new_frame->getActiveLock();
-  activeKeyFrame = new_frame;
-  activeKeyFrameImageData = activeKeyFrame->image(0);
+  activeKeyFramelock          = new_frame->getActiveLock();
+  activeKeyFrame              = new_frame;
+  activeKeyFrameImageData     = activeKeyFrame->image(0);  // level 0?
   activeKeyFrameIsReactivated = false;
 
-  const float* maxGradients = new_frame->maxGradients();
+  // max gradient of each pixel
+  const float* maxGradients   = new_frame->maxGradients();
 
   for (int y = 1; y < height-1; y++) {
     for (int x = 1; x < width-1; x++) {

@@ -23,11 +23,7 @@
 #include <string.h>
 #include <string>
 
-
-
-namespace lsd_slam
-{
-
+namespace lsd_slam {
 
 #define ALIGN __attribute__((__aligned__(16)))
 #define SSEE(val,idx) (*(((float*)&val)+idx))
@@ -144,9 +140,6 @@ namespace lsd_slam
 #define DIFF_FAC_OBSERVE (1.0f*1.0f)
 #define DIFF_FAC_PROP_MERGE (1.0f*1.0f)
 #define DIFF_FAC_INCONSISTENT (1.0f * 1.0f)
-
-
-
 
 // ============== initial stereo pixel selection ======================
 #define MIN_EPL_GRAD_SQUARED (2.0f*2.0f)
