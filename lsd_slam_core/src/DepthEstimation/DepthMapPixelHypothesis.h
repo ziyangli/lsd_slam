@@ -22,12 +22,7 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "util/settings.h"
-#include "util/EigenCoreInclude.h"
-
 namespace lsd_slam {
-
-class KeyFrameGraph;
 
 /** Depth hypothesis used in DepthMap.
  *
