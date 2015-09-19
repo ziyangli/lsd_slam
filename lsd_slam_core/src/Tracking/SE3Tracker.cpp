@@ -28,9 +28,7 @@
 
 #include <Eigen/Core>
 
-namespace lsd_slam
-{
-
+namespace lsd_slam {
 
 #if defined(ENABLE_NEON)
 #define callOptimized(function, arguments) function##NEON arguments
@@ -42,65 +40,59 @@ namespace lsd_slam
 #endif
 #endif
 
+SE3Tracker::SE3Tracker(int w, int h, Eigen::Matrix3f K) {
+  width    = w;
+  height   = h;
 
-SE3Tracker::SE3Tracker(int w, int h, Eigen::Matrix3f K)
-{
-  width = w;
-  height = h;
-
-  this->K = K;
-  fx = K(0,0);
-  fy = K(1,1);
-  cx = K(0,2);
-  cy = K(1,2);
+  this->K  = K;
+  fx       = K(0,0);
+  fy       = K(1,1);
+  cx       = K(0,2);
+  cy       = K(1,2);
 
   settings = DenseDepthTrackerSettings();
   //settings.maxItsPerLvl[0] = 2;
 
-  KInv = K.inverse();
-  fxi = KInv(0,0);
-  fyi = KInv(1,1);
-  cxi = KInv(0,2);
-  cyi = KInv(1,2);
-
+  KInv     = K.inverse();
+  fxi      = KInv(0,0);
+  fyi      = KInv(1,1);
+  cxi      = KInv(0,2);
+  cyi      = KInv(1,2);
 
   buf_warped_residual = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_warped_dx = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_warped_dy = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_warped_x = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_warped_y = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_warped_z = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_warped_dx       = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_warped_dy       = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_warped_x        = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_warped_y        = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_warped_z        = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
 
-  buf_d = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_idepthVar = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
-  buf_weight_p = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_d               = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_idepthVar       = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
+  buf_weight_p        = (float*)Eigen::internal::aligned_malloc(w*h*sizeof(float));
 
-  buf_warped_size = 0;
+  buf_warped_size     = 0;
 
-  debugImageWeights = cv::Mat(height,width,CV_8UC3);
-  debugImageResiduals = cv::Mat(height,width,CV_8UC3);
-  debugImageSecondFrame = cv::Mat(height,width,CV_8UC3);
+  debugImageWeights        = cv::Mat(height,width,CV_8UC3);
+  debugImageResiduals      = cv::Mat(height,width,CV_8UC3);
+  debugImageSecondFrame    = cv::Mat(height,width,CV_8UC3);
   debugImageOldImageWarped = cv::Mat(height,width,CV_8UC3);
   debugImageOldImageSource = cv::Mat(height,width,CV_8UC3);
 
-
-
-  lastResidual = 0;
+  lastResidual    = 0;
   iterationNumber = 0;
-  pointUsage = 0;
-  lastGoodCount = lastBadCount = 0;
+  pointUsage      = 0;
+  lastGoodCount   = 0;
+  lastBadCount    = 0;
 
-  diverged = false;
+  diverged        = false;
 }
 
-SE3Tracker::~SE3Tracker()
-{
+SE3Tracker::~SE3Tracker() {
   debugImageResiduals.release();
   debugImageWeights.release();
   debugImageSecondFrame.release();
   debugImageOldImageSource.release();
   debugImageOldImageWarped.release();
-
 
   Eigen::internal::aligned_free((void*)buf_warped_residual);
   Eigen::internal::aligned_free((void*)buf_warped_dx);
@@ -114,14 +106,9 @@ SE3Tracker::~SE3Tracker()
   Eigen::internal::aligned_free((void*)buf_weight_p);
 }
 
-
-
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
-float SE3Tracker::checkPermaRefOverlap(
-    Frame* reference,
-    SE3 referenceToFrameOrg)
-{
+float SE3Tracker::checkPermaRefOverlap(Frame* reference, SE3 referenceToFrameOrg) {
   Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
   boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
 
@@ -276,7 +263,9 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame,
                            const SE3& frameToReference_initialEstimate) {
 
+  // lock current frame
   boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
+
   diverged           = false;
   trackingWasGood    = true;
   affineEstimation_a = 1;
@@ -291,11 +280,12 @@ SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame,
     const float* frameImage = frame->image();
     for (int row = 0; row < height; ++ row)
       for (int col = 0; col < width; ++ col)
-        setPixelInCvMat(&debugImageSecondFrame,getGrayCvPixel(frameImage[col+row*width]), col, row, 1);
+        setPixelInCvMat(&debugImageSecondFrame, getGrayCvPixel(frameImage[col+row*width]), col, row, 1);
   }
 
   // ============ track frame ============
   Sophus::SE3f referenceToFrame = frameToReference_initialEstimate.inverse().cast<float>();
+
   LGS6 ls;
 
   int numCalcResidualCalls[PYRAMID_LEVELS];
@@ -303,17 +293,21 @@ SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame,
 
   float last_residual = 0;
 
-  for (int lvl = SE3TRACKING_MAX_LEVEL-1; lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
+  // corse-to-fine optimization
+  for (int lvl = SE3TRACKING_MAX_LEVEL - 1;
+       lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
     numCalcResidualCalls[lvl]   = 0;
     numCalcWarpUpdateCalls[lvl] = 0;
 
     reference->makePointCloud(lvl);
 
     callOptimized(calcResidualAndBuffers,
-                  (reference->posData[lvl], reference->colorAndVarData[lvl],
+                  (reference->posData[lvl],
+                   reference->colorAndVarData[lvl],
                    SE3TRACKING_MIN_LEVEL == lvl ?
-                   reference->pointPosInXYGrid[lvl] : 0,
-                   reference->numData[lvl], frame, referenceToFrame, lvl,
+                   reference->pointPosInXYGrid[lvl] : 0,  // no track
+                   reference->numData[lvl],
+                   frame, referenceToFrame, lvl,
                    (plotTracking && lvl == SE3TRACKING_MIN_LEVEL)));
 
     if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width >> lvl) * (height >> lvl)) {
@@ -881,23 +875,21 @@ float SE3Tracker::calcResidualAndBuffers(
     Frame* frame,
     const Sophus::SE3f& referenceToFrame,
     int level,
-    bool plotResidual)
-{
+    bool plotResidual) {
   calcResidualAndBuffers_debugStart();
 
-  if(plotResidual)
+  if (plotResidual)
     debugImageResiduals.setTo(0);
 
+  int w                    = frame->width(level);
+  int h                    = frame->height(level);
+  Eigen::Matrix3f KLvl     = frame->K(level);
+  float fx_l               = KLvl(0,0);
+  float fy_l               = KLvl(1,1);
+  float cx_l               = KLvl(0,2);
+  float cy_l               = KLvl(1,2);
 
-  int w = frame->width(level);
-  int h = frame->height(level);
-  Eigen::Matrix3f KLvl = frame->K(level);
-  float fx_l = KLvl(0,0);
-  float fy_l = KLvl(1,1);
-  float cx_l = KLvl(0,2);
-  float cy_l = KLvl(1,2);
-
-  Eigen::Matrix3f rotMat = referenceToFrame.rotationMatrix();
+  Eigen::Matrix3f rotMat   = referenceToFrame.rotationMatrix();
   Eigen::Vector3f transVec = referenceToFrame.translation();
 
   const Eigen::Vector3f* refPoint_max = refPoint + refNum;
@@ -916,14 +908,11 @@ float SE3Tracker::calcResidualAndBuffers(
 
   float sumSignedRes = 0;
 
-
-
   float sxx=0,syy=0,sx=0,sy=0,sw=0;
 
   float usageCount = 0;
 
-  for(;refPoint<refPoint_max; refPoint++, refColVar++, idxBuf++)
-  {
+  for(; refPoint < refPoint_max; refPoint++, refColVar++, idxBuf++) {
 
     Eigen::Vector3f Wxp = rotMat * (*refPoint) + transVec;
     float u_new = (Wxp[0]/Wxp[2])*fx_l + cx_l;
@@ -969,8 +958,7 @@ float SE3Tracker::calcResidualAndBuffers(
     idx++;
 
 
-    if(isGood)
-    {
+    if (isGood) {
       sumResUnweighted += residual*residual;
       sumSignedRes += residual;
       goodCount++;
@@ -981,22 +969,19 @@ float SE3Tracker::calcResidualAndBuffers(
     float depthChange = (*refPoint)[2] / Wxp[2];    // if depth becomes larger: pixel becomes "smaller", hence count it less.
     usageCount += depthChange < 1 ? depthChange : 1;
 
-
     // DEBUG STUFF
-    if(plotTrackingIterationInfo || plotResidual)
-    {
+    if (plotTrackingIterationInfo || plotResidual) {
       // for debug plot only: find x,y again.
       // horribly inefficient, but who cares at this point...
       Eigen::Vector3f point = KLvl * (*refPoint);
       int x = point[0] / point[2] + 0.5f;
       int y = point[1] / point[2] + 0.5f;
 
-      if(plotTrackingIterationInfo)
-      {
+      if (plotTrackingIterationInfo) {
         setPixelInCvMat(&debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
         setPixelInCvMat(&debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
       }
-      if(isGood)
+      if (isGood)
         setPixelInCvMat(&debugImageResiduals,getGrayCvPixel(residual+128),x,y,(width/w));
       else
         setPixelInCvMat(&debugImageResiduals,cv::Vec3b(0,0,255),x,y,(width/w));
@@ -1006,10 +991,10 @@ float SE3Tracker::calcResidualAndBuffers(
 
   buf_warped_size = idx;
 
-  pointUsage = usageCount / (float)refNum;
-  lastGoodCount = goodCount;
-  lastBadCount = badCount;
-  lastMeanRes = sumSignedRes / goodCount;
+  pointUsage      = usageCount / (float)refNum;
+  lastGoodCount   = goodCount;
+  lastBadCount    = badCount;
+  lastMeanRes     = sumSignedRes / goodCount;
 
   affineEstimation_a_lastIt = sqrtf((syy - sy*sy/sw) / (sxx - sx*sx/sw));
   affineEstimation_b_lastIt = (sy - affineEstimation_a_lastIt*sx)/sw;
@@ -1021,46 +1006,39 @@ float SE3Tracker::calcResidualAndBuffers(
 
 
 #if defined(ENABLE_SSE)
-void SE3Tracker::calculateWarpUpdateSSE(
-    LGS6 &ls)
-{
+void SE3Tracker::calculateWarpUpdateSSE(LGS6 &ls) {
   ls.initialize(width*height);
 
   //    printf("wupd SSE\n");
-  for(int i=0;i<buf_warped_size-3;i+=4)
-  {
+  for (int i = 0; i < buf_warped_size - 3; i += 4) {
 
     __m128 val1, val2, val3, val4;
-    __m128 J61, J62, J63, J64, J65, J66;
+    __m128 J61,  J62,  J63,  J64,  J65,  J66;
 
     // redefine pz
     __m128 pz = _mm_load_ps(buf_warped_z+i);
     pz = _mm_rcp_ps(pz);                        // pz := 1/z
-
 
     __m128 gx = _mm_load_ps(buf_warped_dx+i);
     val1 = _mm_mul_ps(pz, gx);          // gx / z => SET [0]
     //v[0] = z*gx;
     J61 = val1;
 
-
-
     __m128 gy = _mm_load_ps(buf_warped_dy+i);
     val1 = _mm_mul_ps(pz, gy);                  // gy / z => SET [1]
     //v[1] = z*gy;
     J62 = val1;
 
-
     __m128 px = _mm_load_ps(buf_warped_x+i);
     val1 = _mm_mul_ps(px, gy);
     val1 = _mm_mul_ps(val1, pz);    //  px * gy * z
+
     __m128 py = _mm_load_ps(buf_warped_y+i);
     val2 = _mm_mul_ps(py, gx);
     val2 = _mm_mul_ps(val2, pz);    //  py * gx * z
     val1 = _mm_sub_ps(val1, val2);  // px * gy * z - py * gx * z => SET [5]
     //v[5] = -py * z * gx +  px * z * gy;
     J66 = val1;
-
 
     // redefine pz
     pz = _mm_mul_ps(pz,pz);         // pz := 1/(z*z)
@@ -1071,12 +1049,10 @@ void SE3Tracker::calculateWarpUpdateSSE(
     val2 = _mm_mul_ps(py, gy);
     val2 = _mm_mul_ps(val2, pz);        // py * z_sqr * gy
 
-
     val3 = _mm_add_ps(val1, val2);
     val3 = _mm_sub_ps(_mm_setr_ps(0,0,0,0),val3);   //-px * z_sqr * gx -py * z_sqr * gy
     //v[2] = -px * z_sqr * gx -py * z_sqr * gy; => SET [2]
     J63 = val3;
-
 
     val3 = _mm_mul_ps(val1, py); // px * z_sqr * gx * py
     val4 = _mm_add_ps(gy, val3); // gy + px * z_sqr * gx * py
@@ -1088,7 +1064,6 @@ void SE3Tracker::calculateWarpUpdateSSE(
     //       -gy;       => SET [3]
     J64 = val4;
 
-
     val3 = _mm_mul_ps(val1, px); // px * px * z_sqr * gx
     val4 = _mm_add_ps(gx, val3); // gx + px * px * z_sqr * gx
     val3 = _mm_mul_ps(val2, px); // px * py * z_sqr * gy
@@ -1098,20 +1073,16 @@ void SE3Tracker::calculateWarpUpdateSSE(
     //     gx;              => SET [4]
     J65 = val4;
 
-    if(i+3<buf_warped_size)
-    {
+    if (i + 3 < buf_warped_size) {
       ls.updateSSE(J61, J62, J63, J64, J65, J66, _mm_load_ps(buf_warped_residual+i), _mm_load_ps(buf_weight_p+i));
     }
-    else
-    {
-      for(int k=0;i+k<buf_warped_size;k++)
-      {
+    else {
+      for (int k = 0; i+k < buf_warped_size; k++) {
         Vector6 v6;
-        v6 << SSEE(J61,k),SSEE(J62,k),SSEE(J63,k),SSEE(J64,k),SSEE(J65,k),SSEE(J66,k);
+        v6 << SSEE(J61,k), SSEE(J62,k), SSEE(J63,k), SSEE(J64,k), SSEE(J65,k), SSEE(J66,k);
         ls.update(v6, *(buf_warped_residual+i+k), *(buf_weight_p+i+k));
       }
     }
-
 
   }
 
@@ -1121,11 +1092,8 @@ void SE3Tracker::calculateWarpUpdateSSE(
 }
 #endif
 
-
 #if defined(ENABLE_NEON)
-void SE3Tracker::calculateWarpUpdateNEON(
-    LGS6 &ls)
-{
+void SE3Tracker::calculateWarpUpdateNEON(LGS6 &ls) {
   //    weightEstimator.reset();
   //    weightEstimator.estimateDistributionNEON(buf_warped_residual, buf_warped_size);
   //    weightEstimator.calcWeightsNEON(buf_warped_residual, buf_warped_weights, buf_warped_size);
@@ -1142,8 +1110,8 @@ void SE3Tracker::calculateWarpUpdateNEON(
   float* v2_ptr;
   float* v3_ptr;
   float* v4_ptr;
-  for(int i=0;i<buf_warped_size;i+=4)
-  {
+
+  for (int i = 0; i < buf_warped_size; i += 4) {
     v1_ptr = &v1[0];
     v2_ptr = &v2[0];
     v3_ptr = &v3[0];
@@ -1214,17 +1182,14 @@ void SE3Tracker::calculateWarpUpdateNEON(
               "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14"
          );
 
-
     // step 6: integrate into A and b:
-    if(!(i+3>=buf_warped_size))
-    {
+    if(!(i+3>=buf_warped_size)) {
       ls.update(v1, *(buf_warped_residual+i+0), *(buf_weight_p+i+0));
       ls.update(v2, *(buf_warped_residual+i+1), *(buf_weight_p+i+1));
       ls.update(v3, *(buf_warped_residual+i+2), *(buf_weight_p+i+2));
       ls.update(v4, *(buf_warped_residual+i+3), *(buf_weight_p+i+3));
     }
-    else
-    {
+    else {
       ls.update(v1, *(buf_warped_residual+i+0), *(buf_weight_p+i+0));
 
       if(i+1>=buf_warped_size) break;
@@ -1246,16 +1211,14 @@ void SE3Tracker::calculateWarpUpdateNEON(
 #endif
 
 
-void SE3Tracker::calculateWarpUpdate(
-    LGS6 &ls)
-{
+void SE3Tracker::calculateWarpUpdate(LGS6 &ls) {
   //    weightEstimator.reset();
   //    weightEstimator.estimateDistribution(buf_warped_residual, buf_warped_size);
   //    weightEstimator.calcWeights(buf_warped_residual, buf_warped_weights, buf_warped_size);
   //
   ls.initialize(width*height);
-  for(int i=0;i<buf_warped_size;i++)
-  {
+
+  for (int i=0;i<buf_warped_size;i++) {
     float px = *(buf_warped_x+i);
     float py = *(buf_warped_y+i);
     float pz = *(buf_warped_z+i);
@@ -1285,10 +1248,5 @@ void SE3Tracker::calculateWarpUpdate(
   // solve ls
   ls.finish();
   //result = ls.A.ldlt().solve(ls.b);
-
-
 }
-
-
-
 }

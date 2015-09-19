@@ -36,7 +36,6 @@ namespace lsd_slam {
 #define USESSE false
 #endif
 
-
 #if defined(NDEBUG)
 #define enablePrintDebugInfo false
 #else
@@ -54,15 +53,11 @@ namespace lsd_slam {
 #define VALIDITY_COUNTER_DEC 5      // validity is decreased by this on failed stereo
 #define VALIDITY_COUNTER_INITIAL_OBSERVE 5  // initial validity for first observations
 
-
 #define VAL_SUM_MIN_FOR_CREATE (30) // minimal summed validity over 5x5 region to create a new hypothesis for non-blacklisted pixel (hole-filling)
 #define VAL_SUM_MIN_FOR_KEEP (24) // minimal summed validity over 5x5 region to keep hypothesis (regularization)
 #define VAL_SUM_MIN_FOR_UNBLACKLIST (100) // if summed validity surpasses this, a pixel is un-blacklisted.
 
 #define MIN_BLACKLIST -1    // if blacklist is SMALLER than this, pixel gets ignored. blacklist starts with 0.
-
-
-
 
 /** ============== Depth Variance Handeling ======================= */
 #define SUCC_VAR_INC_FAC (1.01f) // before an ekf-update, the variance is increased by this factor.
@@ -72,14 +67,9 @@ namespace lsd_slam {
 #define VAR_GT_INIT_INITIAL 0.01f*0.01f // initial variance vor Ground Truth Initialization
 #define VAR_RANDOM_INIT_INITIAL (0.5f*MAX_VAR)  // initial variance vor Random Initialization
 
-
-
-
-
 // Whether to use the gradients of source and target frame for tracking,
 // or only the target frame gradient
 #define USE_ESM_TRACKING 1
-
 
 #ifdef ANDROID
 // tracking pyramid levels.
@@ -101,10 +91,6 @@ namespace lsd_slam {
 
 #define PYRAMID_LEVELS (SE3TRACKING_MAX_LEVEL > SIM3TRACKING_MAX_LEVEL ? SE3TRACKING_MAX_LEVEL : SIM3TRACKING_MAX_LEVEL)
 
-
-
-
-
 // ============== stereo & gradient calculation ======================
 #define MIN_DEPTH 0.05f // this is the minimal depth tested for stereo.
 
@@ -124,9 +110,6 @@ namespace lsd_slam {
 
 // defines how large the stereo-search region is. it is [mean] +/- [std.dev]*STEREO_EPL_VAR_FAC
 #define STEREO_EPL_VAR_FAC 2.0f
-
-
-
 
 // ============== Smoothing and regularization ======================
 // distance factor for regularization.
@@ -153,8 +136,6 @@ namespace lsd_slam {
 // ============== RE-LOCALIZATION, KF-REACTIVATION etc. ======================
 // defines the level on which we do the quick tracking-check for relocalization.
 
-
-
 #define MAX_DIFF_CONSTANT (40.0f*40.0f)
 #define MAX_DIFF_GRAD_MULT (0.5f*0.5f)
 
@@ -175,7 +156,6 @@ extern bool displayDepthMap;
 extern bool onSceenInfoDisplay;
 extern bool dumpMap;
 extern bool doFullReConstraintTrack;
-
 
 // dyn config
 extern bool printPropagationStatistics;
@@ -249,8 +229,8 @@ extern std::string packagePath;
 
 extern bool fullResetRequested;
 extern bool manualTrackingLossIndicated;
-class RunningStats
-{
+
+class RunningStats {
  public:
   int num_stereo_comparisons;
   int num_stereo_calls;
@@ -270,7 +250,6 @@ class RunningStats
   int num_stereo_interpNone;
   int num_stereo_negative;
   int num_stereo_successfull;
-
 
   int num_observe_created;
   int num_observe_blacklisted;
@@ -294,11 +273,8 @@ class RunningStats
   int num_observe_state_finalizing;
   int num_observe_state_initializing;
 
-
   int num_observe_skip_alreadyGood;
   int num_observe_addSkip;
-
-
 
   int num_observe_no_grad_removed;
   int num_observe_no_grad_left;
@@ -325,57 +301,49 @@ class RunningStats
   int num_reg_blacklisted;
   int num_reg_setBlacklisted;
 
-  inline RunningStats()
-  {
+  inline RunningStats() {
     setZero();
   }
 
-  inline void setZero()
-  {
-    memset(this,0,sizeof(RunningStats));
+  inline void setZero() {
+    memset(this, 0, sizeof(RunningStats));
   }
 
-  inline void add(RunningStats* r)
-  {
+  inline void add(RunningStats* r) {
     int* pt = (int*)this;
     int* pt_r = (int*)r;
-    for(int i=0;i<static_cast<int>(sizeof(RunningStats)/sizeof(int));i++)
+    for (int i = 0; i < static_cast<int>(sizeof(RunningStats)/sizeof(int)); i++)
       pt[i] += pt_r[i];
   }
 };
 
-
-class DenseDepthTrackerSettings
-{
+class DenseDepthTrackerSettings {
  public:
-  inline DenseDepthTrackerSettings()
-  {
+  inline DenseDepthTrackerSettings() {
     // Set default settings
     if (PYRAMID_LEVELS > 6)
       printf("WARNING: Sim3Tracker(): default settings are intended for a maximum of 6 levels!");
 
     lambdaSuccessFac = 0.5f;
-    lambdaFailFac = 2.0f;
+    lambdaFailFac    = 2.0f;
 
     const float stepSizeMinc[6] = {1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8};
-    const int maxIterations[6] = {5, 20, 50, 100, 100, 100};
+    const int maxIterations[6]  = {5, 20, 50, 100, 100, 100};
 
-
-    for (int level = 0; level < PYRAMID_LEVELS; ++ level)
-    {
-      lambdaInitial[level] = 0;
-      stepSizeMin[level] = stepSizeMinc[level];
+    for (int level = 0; level < PYRAMID_LEVELS; ++ level) {
+      lambdaInitial[level]  = 0;
+      stepSizeMin[level]    = stepSizeMinc[level];
       convergenceEps[level] = 0.999f;
-      maxItsPerLvl[level] = maxIterations[level];
+      maxItsPerLvl[level]   = maxIterations[level];
     }
 
-    lambdaInitialTestTrack = 0;
-    stepSizeMinTestTrack = 1e-3;
+    lambdaInitialTestTrack  = 0;
+    stepSizeMinTestTrack    = 1e-3;
     convergenceEpsTestTrack = 0.98;
-    maxItsTestTrack = 5;
+    maxItsTestTrack         = 5;
 
-    var_weight = 1.0;
-    huber_d = 3;
+    var_weight              = 1.0;
+    huber_d                 = 3;
   }
 
   float lambdaSuccessFac;

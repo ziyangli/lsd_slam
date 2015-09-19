@@ -868,6 +868,7 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
 
   bool my_createNewKeyframe = createNewKeyFrame;    // pre-save here, to make decision afterwards.
 
+  // by zli: so reference has a kf?
   if (trackingReference->keyframe != currentKeyFrame.get() ||
       currentKeyFrame->depthHasBeenUpdatedFlag) {
     trackingReference->importFrame(currentKeyFrame.get());
@@ -879,28 +880,32 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
   currentKeyFrameMutex.unlock();
 
   // DO TRACKING & Show tracking result.
-  if(enablePrintDebugInfo && printThreadingInfo)
+  if (enablePrintDebugInfo && printThreadingInfo)
     printf("TRACKING %d on %d\n", trackingNewFrame->id(), trackingReferencePose->frameID);
 
   poseConsistencyMutex.lock_shared();
   SE3 frameToReference_initialEstimate = se3FromSim3(
+      // by zli: so what? ref is the current frame?
       trackingReferencePose->getCamToWorld().inverse() * keyFrameGraph->allFramePoses.back()->getCamToWorld());
   poseConsistencyMutex.unlock_shared();
 
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
 
+  // get R & T
   SE3 newRefToFrame_poseUpdate = tracker->trackFrame(
-      trackingReference,
+      trackingReference,  // by zli: a vector of kfs?
       trackingNewFrame.get(),
       frameToReference_initialEstimate);
 
   gettimeofday(&tv_end, NULL);
-  msTrackFrame = 0.9*msTrackFrame + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+
+  msTrackFrame = 0.9*msTrackFrame + 0.1*((tv_end.tv_sec - tv_start.tv_sec)*1000.0f + (tv_end.tv_usec - tv_start.tv_usec)/1000.0f);
+
   nTrackFrame++;
 
   tracking_lastResidual = tracker->lastResidual;
-  tracking_lastUsage = tracker->pointUsage;
+  tracking_lastUsage    = tracker->pointUsage;
   tracking_lastGoodPerBad = tracker->lastGoodCount / (tracker->lastGoodCount + tracker->lastBadCount);
   tracking_lastGoodPerTotal = tracker->lastGoodCount / (trackingNewFrame->width(SE3TRACKING_MIN_LEVEL)*trackingNewFrame->height(SE3TRACKING_MIN_LEVEL));
 
