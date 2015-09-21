@@ -205,15 +205,14 @@ extern int propagateKeyFrameDepthCount;
 extern float loopclosureStrictness;
 extern float relocalizationTH;
 
-
 extern float minUseGrad;
 extern float cameraPixelNoise2;
 extern float depthSmoothingFactor;
 
 extern bool useFabMap;
-extern bool doSlam;
+extern bool doSlam;  // open g2o thread or not
 extern bool doKFReActivation;
-extern bool doMapping;
+extern bool doMapping;  // open mapping thread or not
 
 extern bool saveKeyframes;
 extern bool saveAllTracked;

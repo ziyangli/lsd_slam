@@ -659,34 +659,28 @@ void DepthMap::regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* 
   }
 }
 
-void DepthMap::regularizeDepthMapFillHoles()
-{
+void DepthMap::regularizeDepthMapFillHoles() {
 
   buildRegIntegralBuffer();
 
-  runningStats.num_reg_created=0;
+  runningStats.num_reg_created = 0;
 
-  memcpy(otherDepthMap,currentDepthMap,width*height*sizeof(DepthMapPixelHypothesis));
+  memcpy(otherDepthMap, currentDepthMap, width*height*sizeof(DepthMapPixelHypothesis));
   threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapFillHolesRow, this, _1, _2, _3), 3, height-2, 10);
-  if(enablePrintDebugInfo && printFillHolesStatistics)
+  if (enablePrintDebugInfo && printFillHolesStatistics)
     printf("FillHoles (discreteDepth): %d created\n",
            runningStats.num_reg_created);
 }
 
-
-
-void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stats)
-{
+void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stats) {
   // ============ build inegral buffers
   int* validityIntegralBufferPT = validityIntegralBuffer+yMin*width;
   DepthMapPixelHypothesis* ptSrc = currentDepthMap+yMin*width;
-  for(int y=yMin;y<yMax;y++)
-  {
+  for (int y = yMin; y < yMax; y++) {
     int validityIntegralBufferSUM = 0;
 
-    for(int x=0;x<width;x++)
-    {
-      if(ptSrc->isValid)
+    for (int x = 0; x < width; x++) {
+      if (ptSrc->isValid)
         validityIntegralBufferSUM += ptSrc->validity_counter;
 
       *(validityIntegralBufferPT++) = validityIntegralBufferSUM;
@@ -695,39 +689,34 @@ void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stat
   }
 }
 
-
-void DepthMap::buildRegIntegralBuffer()
-{
+void DepthMap::buildRegIntegralBuffer() {
   threadReducer.reduce(boost::bind(&DepthMap::buildRegIntegralBufferRow1, this, _1, _2,_3), 0, height);
 
   int* validityIntegralBufferPT = validityIntegralBuffer;
   int* validityIntegralBufferPT_T = validityIntegralBuffer+width;
 
   int wh = height*width;
-  for(int idx=width;idx<wh;idx++)
+  for (int idx = width; idx < wh; idx++)
     *(validityIntegralBufferPT_T++) += *(validityIntegralBufferPT++);
-
 }
 
-template<bool removeOcclusions> void DepthMap::regularizeDepthMapRow(int validityTH, int yMin, int yMax, RunningStats* stats)
-{
+template<bool removeOcclusions> void DepthMap::regularizeDepthMapRow(int validityTH, int yMin, int yMax, RunningStats* stats) {
   const int regularize_radius = 2;
 
   const float regDistVar = REG_DIST_VAR;
 
-  for(int y=yMin;y<yMax;y++)
-  {
-    for(int x=regularize_radius;x<width-regularize_radius;x++)
-    {
+  for (int y = yMin; y < yMax; y++) {
+    for (int x = regularize_radius; x <width-regularize_radius; x++) {
       DepthMapPixelHypothesis* dest = currentDepthMap + x + y*width;
       DepthMapPixelHypothesis* destRead = otherDepthMap + x + y*width;
 
       // if isValid need to do better examination and then update.
 
-      if(enablePrintDebugInfo && destRead->blacklisted < MIN_BLACKLIST)
+      if (enablePrintDebugInfo &&
+          destRead->blacklisted < MIN_BLACKLIST)
         stats->num_reg_blacklisted++;
 
-      if(!destRead->isValid)
+      if (!destRead->isValid)
         continue;
 
       float sum=0, val_sum=0, sumIvar=0;//, min_varObs = 1e20;
@@ -1131,10 +1120,10 @@ void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFram
   }
 }
 
-void DepthMap::invalidate()
-{
-  if(activeKeyFrame==0) return;
-  activeKeyFrame=0;
+void DepthMap::invalidate() {
+  if (activeKeyFrame == 0)
+    return;
+  activeKeyFrame = 0;
   activeKeyFramelock.unlock();
 }
 
@@ -1275,29 +1264,36 @@ void DepthMap::addTimingSample()
              msSetDepth, nAvgSetDepth);
     }
   }
-
-
 }
 
-void DepthMap::finalizeKeyFrame()
-{
-  assert(isValid());
+void DepthMap::finalizeKeyFrame() {
 
+  assert(isValid());
 
   struct timeval tv_start_all, tv_end_all;
   gettimeofday(&tv_start_all, NULL);
-  struct timeval tv_start, tv_end;
 
+  // fill holes and calculate time
+  struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
   regularizeDepthMapFillHoles();
   gettimeofday(&tv_end, NULL);
-  msFillHoles = 0.9*msFillHoles + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+
+  msFillHoles = 0.9*msFillHoles +
+                0.1*(
+                    (tv_end.tv_sec-tv_start.tv_sec)*1000.0f +
+                    (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
   nFillHoles++;
 
+  // by zli: remove invalid?
   gettimeofday(&tv_start, NULL);
   regularizeDepthMap(false, VAL_SUM_MIN_FOR_KEEP);
   gettimeofday(&tv_end, NULL);
-  msRegularize = 0.9*msRegularize + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+
+  msRegularize = 0.9*msRegularize +
+                 0.1*(
+                     (tv_end.tv_sec-tv_start.tv_sec)*1000.0f +
+                     (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
   nRegularize++;
 
   gettimeofday(&tv_start, NULL);
@@ -1305,20 +1301,23 @@ void DepthMap::finalizeKeyFrame()
   activeKeyFrame->calculateMeanInformation();
   activeKeyFrame->takeReActivationData(currentDepthMap);
   gettimeofday(&tv_end, NULL);
-  msSetDepth = 0.9*msSetDepth + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+  msSetDepth = 0.9*msSetDepth +
+               0.1*(
+                   (tv_end.tv_sec-tv_start.tv_sec)*1000.0f +
+                   (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
   nSetDepth++;
 
   gettimeofday(&tv_end_all, NULL);
-  msFinalize = 0.9*msFinalize + 0.1*((tv_end_all.tv_sec-tv_start_all.tv_sec)*1000.0f + (tv_end_all.tv_usec-tv_start_all.tv_usec)/1000.0f);
+  msFinalize = 0.9*msFinalize +
+               0.1*(
+                   (tv_end_all.tv_sec-tv_start_all.tv_sec)*1000.0f +
+                   (tv_end_all.tv_usec-tv_start_all.tv_usec)/1000.0f);
   nFinalize++;
 }
 
-
-
-
-int DepthMap::debugPlotDepthMap()
-{
-  if(activeKeyFrame == 0) return 1;
+int DepthMap::debugPlotDepthMap() {
+  if (activeKeyFrame == 0)
+    return 1;
 
   cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(), CV_32F, const_cast<float*>(activeKeyFrameImageData));
   keyFrameImage.convertTo(debugImageDepth, CV_8UC1);
@@ -1327,16 +1326,16 @@ int DepthMap::debugPlotDepthMap()
   // debug plot & publish sparse version?
   int refID = referenceFrameByID_offset;
 
-
-  for(int y=0;y<height;y++)
-    for(int x=0;x<width;x++)
-    {
+  for (int y = 0; y < height; y++)
+    for (int x = 0; x < width; x++) {
       int idx = x + y*width;
 
-      if(currentDepthMap[idx].blacklisted < MIN_BLACKLIST && debugDisplay == 2)
+      if (currentDepthMap[idx].blacklisted < MIN_BLACKLIST &&
+          debugDisplay == 2)
         debugImageDepth.at<cv::Vec3b>(y,x) = cv::Vec3b(0,0,255);
 
-      if(!currentDepthMap[idx].isValid) continue;
+      if (!currentDepthMap[idx].isValid)
+        continue;
 
       cv::Vec3b color = currentDepthMap[idx].getVisualizationColor(refID);
       debugImageDepth.at<cv::Vec3b>(y,x) = color;

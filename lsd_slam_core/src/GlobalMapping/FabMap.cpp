@@ -203,8 +203,7 @@ void FabMap::compareAndAdd(Frame* keyframe, int* out_newID, int* out_loopID)
   return;
 }
 
-bool FabMap::isValid() const
-{
+bool FabMap::isValid() const {
   return valid;
 }
 
