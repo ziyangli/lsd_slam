@@ -153,13 +153,15 @@ int main(int argc, char** argv) {
 
   boost::thread rosThread;
 
-  if (argc > 1) {
-    rosThread = boost::thread(rosFileLoop, argc, argv);
-  }
-  else {
-    // start ROS thread
-    rosThread = boost::thread(rosThreadLoop, argc, argv);
-  }
+  // if (argc > 1) {
+  //   rosThread = boost::thread(rosFileLoop, argc, argv);
+  // }
+  // else {
+  //   // start ROS thread
+  //   rosThread = boost::thread(rosThreadLoop, argc, argv);
+  // }
+
+  rosThread = boost::thread(rosThreadLoop, argc, argv);
 
   application.exec();
 
