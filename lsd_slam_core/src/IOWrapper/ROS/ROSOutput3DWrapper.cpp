@@ -26,13 +26,13 @@
 #include "util/SophusUtil.h"
 #include "util/settings.h"
 
-#include "lsd_slam_viewer/keyframeGraphMsg.h"
-#include "lsd_slam_viewer/keyframeMsg.h"
-
 #include "DataStructures/Frame.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "sophus/sim3.hpp"
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
+
+#include "lsd_slam_viewer/keyframeGraphMsg.h"
+#include "lsd_slam_viewer/keyframeMsg.h"
 
 namespace lsd_slam {
 

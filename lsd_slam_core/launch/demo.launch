@@ -1,0 +1,10 @@
+<launch>
+  <node pkg="lsd_slam_core" type="live_slam" name="lsd_slam" output="screen">
+
+    <remap from="/image" to="/mv_25001326/image_rect"/>
+    <remap from="/camera_info" to="/mv_25001326/camera_info"/>
+  </node>
+
+  <node pkg="lsd_slam_viewer" type="viewer" name="viewer" output="screen"/>
+
+</launch>
