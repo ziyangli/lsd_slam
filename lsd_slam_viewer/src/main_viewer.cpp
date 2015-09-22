@@ -61,14 +61,14 @@ void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t leve
 
 void frameCb(lsd_slam_viewer::keyframeMsgConstPtr msg) {
 
-  if(msg->time > lastFrameTime) return;
+  if (msg->time > lastFrameTime) return;
 
-  if(viewer != 0)
+  if (viewer != 0)
     viewer->addFrameMsg(msg);
 }
 
 void graphCb(lsd_slam_viewer::keyframeGraphMsgConstPtr msg) {
-  if(viewer != 0)
+  if (viewer != 0)
     viewer->addGraphMsg(msg);
 }
 

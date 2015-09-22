@@ -42,22 +42,22 @@
 #include "KeyFrameGraphDisplay.h"
 
 PointCloudViewer::PointCloudViewer() {
-  setPathKey(Qt::Key_0,0);
-  setPathKey(Qt::Key_1,1);
-  setPathKey(Qt::Key_2,2);
-  setPathKey(Qt::Key_3,3);
-  setPathKey(Qt::Key_4,4);
-  setPathKey(Qt::Key_5,5);
-  setPathKey(Qt::Key_6,6);
-  setPathKey(Qt::Key_7,7);
-  setPathKey(Qt::Key_8,8);
-  setPathKey(Qt::Key_9,9);
+  setPathKey(Qt::Key_0, 0);
+  setPathKey(Qt::Key_1, 1);
+  setPathKey(Qt::Key_2, 2);
+  setPathKey(Qt::Key_3, 3);
+  setPathKey(Qt::Key_4, 4);
+  setPathKey(Qt::Key_5, 5);
+  setPathKey(Qt::Key_6, 6);
+  setPathKey(Qt::Key_7, 7);
+  setPathKey(Qt::Key_8, 8);
+  setPathKey(Qt::Key_9, 9);
 
   currentCamDisplay = 0;
-  graphDisplay = 0;
+  graphDisplay      = 0;
 
-  for(int i = 0; i < 10; i++) {
-    KFexists[i] = 0;
+  for (int i = 0; i < 10; i++) {
+    KFexists[i]      = 0;
     KFautoPlayIdx[i] = -1;
   }
 
