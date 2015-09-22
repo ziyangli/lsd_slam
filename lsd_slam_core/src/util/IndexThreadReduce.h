@@ -19,50 +19,42 @@
  */
 
 #pragma once
-#include "util/settings.h"
-#include "boost/thread.hpp"
 #include <stdio.h>
 #include <iostream>
+#include <boost/thread.hpp>
 
+#include "util/settings.h"
 
+namespace lsd_slam {
 
-namespace lsd_slam
-{
-
-class IndexThreadReduce
-{
+class IndexThreadReduce {
 
  public:
-  inline IndexThreadReduce()
-  {
-    nextIndex = 0;
-    maxIndex = 0;
-    stepSize = 1;
+  inline IndexThreadReduce() {
+    nextIndex    = 0;
+    maxIndex     = 0;
+    stepSize     = 1;
     callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3);
 
     running = true;
-    for(int i=0;i<MAPPING_THREADS;i++)
-    {
+    for (int i = 0; i < MAPPING_THREADS; i++) {
       isDone[i] = false;
       workerThreads[i] = boost::thread(&IndexThreadReduce::workerLoop, this, i);
     }
-
     //printf("created ThreadReduce\n");
   }
-  inline ~IndexThreadReduce()
-  {
+
+  inline ~IndexThreadReduce() {
     running = false;
 
     exMutex.lock();
     todo_signal.notify_all();
     exMutex.unlock();
 
-    for(int i=0;i<MAPPING_THREADS;i++)
+    for (int i = 0; i < MAPPING_THREADS; i++)
       workerThreads[i].join();
 
-
     //printf("destroyed ThreadReduce\n");
-
   }
 
   inline void reduce(boost::function<void(int,int,RunningStats*)> callPerIndex, int first, int end, int stepSize = 0) {
@@ -81,9 +73,9 @@ class IndexThreadReduce
 
     // save
     this->callPerIndex = callPerIndex;
-    nextIndex = first;
-    maxIndex = end;
-    this->stepSize = stepSize;
+    nextIndex          = first;
+    maxIndex           = end;
+    this->stepSize     = stepSize;
 
     // go worker threads!
     for (int i = 0; i < MAPPING_THREADS; i++)
@@ -109,8 +101,8 @@ class IndexThreadReduce
         break;
     }
 
-    nextIndex = 0;
-    maxIndex = 0;
+    nextIndex          = 0;
+    maxIndex           = 0;
     this->callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3);
 
     //printf("reduce done (all threads finished)\n");
@@ -130,9 +122,9 @@ class IndexThreadReduce
 
   bool running;
 
-  boost::function<void(int,int,RunningStats*)> callPerIndex;
+  boost::function<void(int, int, RunningStats*)> callPerIndex;
 
-  void callPerIndexDefault(int i, int j,RunningStats* k) {
+  void callPerIndexDefault(int i, int j, RunningStats* k) {
     printf("ERROR: should never be called....\n");
   }
 
@@ -141,13 +133,13 @@ class IndexThreadReduce
 
     while (running) {
       // try to get something to do.
-      int todo = 0;
+      int todo          = 0;
       bool gotSomething = false;
       if (nextIndex < maxIndex) {
         // got something!
-        todo = nextIndex;
-        nextIndex+=stepSize;
-        gotSomething = true;
+        todo            = nextIndex;
+        nextIndex       += stepSize;
+        gotSomething    = true;
       }
 
       // if got something: do it (unlock in the meantime)
@@ -157,15 +149,13 @@ class IndexThreadReduce
         assert(callPerIndex != 0);
 
         RunningStats s;
-        callPerIndex(todo, std::min(todo+stepSize, maxIndex), &s);
+        callPerIndex(todo, std::min(todo + stepSize, maxIndex), &s);
 
         lock.lock();
         runningStats.add(&s);
       }
-
       // otherwise wait on signal, releasing lock in the meantime.
-      else
-      {
+      else {
         isDone[idx] = true;
         //printf("worker %d waiting..\n", idx);
         done_signal.notify_all();
@@ -174,4 +164,5 @@ class IndexThreadReduce
     }
   }
 };
+
 }

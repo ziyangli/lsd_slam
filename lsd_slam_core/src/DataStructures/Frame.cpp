@@ -94,29 +94,31 @@ Frame::~Frame() {
 }
 
 void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap) {
+
   boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
 
-  if(data.validity_reAct == 0)
-    data.validity_reAct = (unsigned char*) FrameMemory::getInstance().getBuffer(data.width[0]*data.height[0]);
+  if (data.validity_reAct == nullptr)
+    data.validity_reAct = (unsigned char*)FrameMemory::getInstance().getBuffer(data.width[0]*data.height[0]);
 
-  if(data.idepth_reAct == 0)
+  if (data.idepth_reAct == nullptr)
     data.idepth_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
 
-  if(data.idepthVar_reAct == 0)
+  if (data.idepthVar_reAct == nullptr)
     data.idepthVar_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
 
-  float* id_pt = data.idepth_reAct;
-  float* id_pt_max = data.idepth_reAct + (data.width[0]*data.height[0]);
-  float* idv_pt = data.idepthVar_reAct;
+  float* id_pt          = data.idepth_reAct;
+  float* idv_pt         = data.idepthVar_reAct;
   unsigned char* val_pt = data.validity_reAct;
+  float* id_pt_max      = data.idepth_reAct + (data.width[0]*data.height[0]);
 
-  for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap) {
-    if(depthMap->isValid) {
-      *id_pt = depthMap->idepth;
+  for (; id_pt < id_pt_max;
+       ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap) {
+    if (depthMap->isValid) {
+      *id_pt  = depthMap->idepth;
       *idv_pt = depthMap->idepth_var;
       *val_pt = depthMap->validity_counter;
     }
-    else if(depthMap->blacklisted < MIN_BLACKLIST) {
+    else if (depthMap->blacklisted < MIN_BLACKLIST) {
       *idv_pt = -2;
     }
     else {
@@ -133,9 +135,9 @@ void Frame::setPermaRef(TrackingReference* reference) {
 
   permaRef_mutex.lock();
 
-  if(permaRef_colorAndVarData != 0)
+  if (permaRef_colorAndVarData != nullptr)
     delete permaRef_colorAndVarData;
-  if(permaRef_posData != 0)
+  if(permaRef_posData != nullptr)
     delete permaRef_posData;
 
   permaRefNumPts = reference->numData[QUICK_KF_CHECK_LVL];

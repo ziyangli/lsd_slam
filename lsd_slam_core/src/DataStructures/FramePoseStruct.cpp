@@ -64,8 +64,8 @@ void FramePoseStruct::applyPoseGraphOptResult() {
   if (!hasUnmergedPose)
     return;
 
-  camToWorld = camToWorld_new;
-  isOptimized = true;
+  camToWorld      = camToWorld_new;
+  isOptimized     = true;
   hasUnmergedPose = false;
   cacheValidCounter++;
 }

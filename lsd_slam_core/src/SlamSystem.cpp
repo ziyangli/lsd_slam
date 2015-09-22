@@ -192,7 +192,7 @@ void SlamSystem::mergeOptimizationOffset() {
 
   poseConsistencyMutex.unlock();
 
-  if(needPublish)
+  if (needPublish)
     publishKeyframeGraph();
 }
 
@@ -238,7 +238,7 @@ void SlamSystem::finalize() {
   unmappedTrackedFramesSignal.notify_one();
   unmappedTrackedFramesMutex.unlock();
 
-  while(doFinalOptimization) {
+  while (doFinalOptimization) {
     usleep(200000);
   }
 
@@ -251,7 +251,7 @@ void SlamSystem::finalize() {
 }
 
 void SlamSystem::constraintSearchThreadLoop() {
-  printf("Started  constraint search thread!\n");
+  printf("Started constraint search thread!\n");
 
   boost::unique_lock<boost::mutex> lock(newKeyFrameMutex);
   int failedToRetrack = 0;
@@ -279,18 +279,16 @@ void SlamSystem::constraintSearchThreadLoop() {
 
         if (failedToRetrack < (int)keyFrameGraph->keyframesForRetrack.size() - 5)
           doneSomething = true;
-
       }
       else
         keyFrameGraph->keyframesForRetrackMutex.unlock();
 
       lock.lock();
 
-      if(!doneSomething) {
+      if (!doneSomething) {
         if (enablePrintDebugInfo && printConstraintSearchInfo)
           printf("nothing to re-track... waiting.\n");
-        newKeyFrameCreatedSignal.timed_wait(lock,boost::posix_time::milliseconds(500));
-
+        newKeyFrameCreatedSignal.timed_wait(lock, boost::posix_time::milliseconds(500));
       }
     }
     else {
@@ -300,10 +298,10 @@ void SlamSystem::constraintSearchThreadLoop() {
 
       struct timeval tv_start, tv_end;
       gettimeofday(&tv_start, NULL);
-
       findConstraintsForNewKeyFrames(newKF, true, true, 1.0);
-      failedToRetrack=0;
+      failedToRetrack = 0;
       gettimeofday(&tv_end, NULL);
+
       msFindConstraintsItaration = 0.9*msFindConstraintsItaration + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
       nFindConstraintsItaration++;
 
@@ -311,12 +309,13 @@ void SlamSystem::constraintSearchThreadLoop() {
       lock.lock();
     }
 
-    if(doFullReConstraintTrack) {
+    if (doFullReConstraintTrack) {
       lock.unlock();
       printf("Optizing Full Map!\n");
 
       int added = 0;
-      for(unsigned int i = 0; i < keyFrameGraph->keyframesAll.size(); i++) {
+      for (unsigned int i = 0;
+           i < keyFrameGraph->keyframesAll.size(); i++) {
         if (keyFrameGraph->keyframesAll[i]->pose->isInGraph)
           added += findConstraintsForNewKeyFrames(keyFrameGraph->keyframesAll[i], false, false, 1.0);
       }
@@ -340,7 +339,7 @@ void SlamSystem::optimizationThreadLoop() {
   while (keepRunning) {
     boost::unique_lock<boost::mutex> lock(newConstraintMutex);
     if (!newConstraintAdded)
-      newConstraintCreatedSignal.timed_wait(lock,boost::posix_time::milliseconds(2000));    // slight chance of deadlock otherwise
+      newConstraintCreatedSignal.timed_wait(lock, boost::posix_time::milliseconds(2000));    // slight chance of deadlock otherwise
     newConstraintAdded = false;
     lock.unlock();
 
@@ -349,6 +348,7 @@ void SlamSystem::optimizationThreadLoop() {
       optimizationIteration(50, 0.001);
       doFinalOptimization = false;
     }
+
     while(optimizationIteration(5, 0.02));
   }
 
@@ -360,7 +360,8 @@ void SlamSystem::publishKeyframeGraph() {
     outputWrapper->publishKeyframeGraph(keyFrameGraph);
 }
 
-void SlamSystem::requestDepthMapScreenshot(const std::string& filename) {
+void SlamSystem::requestDepthMapScreenshot(
+    const std::string& filename) {
   depthMapScreenshotFilename = filename;
   depthMapScreenshotFlag = true;
 }
@@ -406,12 +407,12 @@ void SlamSystem::discardCurrentKeyframe() {
     return;
   }
 
-
   map->invalidate();
 
   keyFrameGraph->allFramePosesMutex.lock();
   for (FramePoseStruct* p : keyFrameGraph->allFramePoses) {
-    if(p->trackingParent != 0 && p->trackingParent->frameID == currentKeyFrame->id())
+    if (p->trackingParent != 0 &&
+        p->trackingParent->frameID == currentKeyFrame->id())
       p->trackingParent = 0;
   }
 
@@ -420,16 +421,13 @@ void SlamSystem::discardCurrentKeyframe() {
   keyFrameGraph->idToKeyFrameMutex.lock();
   keyFrameGraph->idToKeyFrame.erase(currentKeyFrame->id());
   keyFrameGraph->idToKeyFrameMutex.unlock();
-
 }
 
 void SlamSystem::createNewCurrentKeyframe(std::shared_ptr<Frame> newKeyframeCandidate) {
   if (enablePrintDebugInfo && printThreadingInfo)
     printf("CREATE NEW KF %d from %d\n", newKeyframeCandidate->id(), currentKeyFrame->id());
 
-
-  if(SLAMEnabled)
-  {
+  if (SLAMEnabled) {
     // add NEW keyframe to id-lookup
     keyFrameGraph->idToKeyFrameMutex.lock();
     keyFrameGraph->idToKeyFrame.insert(std::make_pair(newKeyframeCandidate->id(), newKeyframeCandidate));
@@ -439,8 +437,7 @@ void SlamSystem::createNewCurrentKeyframe(std::shared_ptr<Frame> newKeyframeCand
   // propagate & make new.
   map->createKeyFrame(newKeyframeCandidate.get());
 
-  if(printPropagationStatistics)
-  {
+  if (printPropagationStatistics) {
 
     Eigen::Matrix<float, 20, 1> data;
     data.setZero();
@@ -455,14 +452,14 @@ void SlamSystem::createNewCurrentKeyframe(std::shared_ptr<Frame> newKeyframeCand
   currentKeyFrame = newKeyframeCandidate;
   currentKeyFrameMutex.unlock();
 }
-void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad)
-{
-  if(enablePrintDebugInfo && printThreadingInfo)
+
+void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad) {
+  if (enablePrintDebugInfo && printThreadingInfo)
     printf("RE-ACTIVATE KF %d\n", keyframeToLoad->id());
 
   map->setFromExistingKF(keyframeToLoad);
 
-  if(enablePrintDebugInfo && printRegularizeStatistics)
+  if (enablePrintDebugInfo && printRegularizeStatistics)
     printf("re-activate frame %d!\n", keyframeToLoad->id());
 
   currentKeyFrameMutex.lock();
@@ -472,18 +469,24 @@ void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad)
 }
 
 void SlamSystem::changeKeyframe(bool noCreate, bool force, float maxScore) {
-  Frame* newReferenceKF=0;
+  Frame* newReferenceKF = nullptr;
   std::shared_ptr<Frame> newKeyframeCandidate = latestTrackedFrame;
-  if(doKFReActivation && SLAMEnabled) {
+
+  if (doKFReActivation && SLAMEnabled) {
+
     struct timeval tv_start, tv_end;
     gettimeofday(&tv_start, NULL);
     newReferenceKF = trackableKeyFrameSearch->findRePositionCandidate(newKeyframeCandidate.get(), maxScore);
     gettimeofday(&tv_end, NULL);
-    msFindReferences = 0.9*msFindReferences + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+
+    msFindReferences = 0.9*msFindReferences +
+                       0.1*(
+                           (tv_end.tv_sec-tv_start.tv_sec)*1000.0f +
+                           (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
     nFindReferences++;
   }
 
-  if (newReferenceKF != 0)
+  if (newReferenceKF != nullptr)
     loadNewCurrentKeyframe(newReferenceKF);
   else {
     if (force) {
@@ -571,31 +574,35 @@ bool SlamSystem::updateKeyframe() {
   return true;
 }
 
-
-void SlamSystem::addTimingSamples()
-{
+void SlamSystem::addTimingSamples() {
   map->addTimingSample();
   struct timeval now;
   gettimeofday(&now, NULL);
   float sPassed = ((now.tv_sec-lastHzUpdate.tv_sec) + (now.tv_usec-lastHzUpdate.tv_usec)/1000000.0f);
-  if(sPassed > 1.0f)
-  {
-    nAvgTrackFrame = 0.8*nAvgTrackFrame + 0.2*(nTrackFrame / sPassed); nTrackFrame = 0;
-    nAvgOptimizationIteration = 0.8*nAvgOptimizationIteration + 0.2*(nOptimizationIteration / sPassed); nOptimizationIteration = 0;
-    nAvgFindReferences = 0.8*nAvgFindReferences + 0.2*(nFindReferences / sPassed); nFindReferences = 0;
+  if (sPassed > 1.0f) {
+    nAvgTrackFrame = 0.8*nAvgTrackFrame + 0.2*(nTrackFrame / sPassed);
+    nTrackFrame = 0;
 
-    if(trackableKeyFrameSearch != 0)
-    {
-      trackableKeyFrameSearch->nAvgTrackPermaRef = 0.8*trackableKeyFrameSearch->nAvgTrackPermaRef + 0.2*(trackableKeyFrameSearch->nTrackPermaRef / sPassed); trackableKeyFrameSearch->nTrackPermaRef = 0;
+    nAvgOptimizationIteration = 0.8*nAvgOptimizationIteration + 0.2*(nOptimizationIteration / sPassed);
+    nOptimizationIteration = 0;
+
+    nAvgFindReferences = 0.8*nAvgFindReferences + 0.2*(nFindReferences / sPassed);
+    nFindReferences = 0;
+
+    if (trackableKeyFrameSearch != 0) {
+      trackableKeyFrameSearch->nAvgTrackPermaRef = 0.8*trackableKeyFrameSearch->nAvgTrackPermaRef + 0.2*(trackableKeyFrameSearch->nTrackPermaRef / sPassed);
+      trackableKeyFrameSearch->nTrackPermaRef = 0;
     }
-    nAvgFindConstraintsItaration = 0.8*nAvgFindConstraintsItaration + 0.2*(nFindConstraintsItaration / sPassed); nFindConstraintsItaration = 0;
-    nAvgOptimizationIteration = 0.8*nAvgOptimizationIteration + 0.2*(nOptimizationIteration / sPassed); nOptimizationIteration = 0;
+
+    nAvgFindConstraintsItaration = 0.8*nAvgFindConstraintsItaration + 0.2*(nFindConstraintsItaration / sPassed);
+    nFindConstraintsItaration = 0;
+
+    nAvgOptimizationIteration = 0.8*nAvgOptimizationIteration + 0.2*(nOptimizationIteration / sPassed);
+    nOptimizationIteration = 0;
 
     lastHzUpdate = now;
 
-
-    if(enablePrintDebugInfo && printOverallTiming)
-    {
+    if (enablePrintDebugInfo && printOverallTiming) {
       printf("MapIt: %3.1fms (%.1fHz); Track: %3.1fms (%.1fHz); Create: %3.1fms (%.1fHz); FindRef: %3.1fms (%.1fHz); PermaTrk: %3.1fms (%.1fHz); Opt: %3.1fms (%.1fHz); FindConst: %3.1fms (%.1fHz);\n",
              map->msUpdate, map->nAvgUpdate,
              msTrackFrame, nAvgTrackFrame,
@@ -609,19 +616,15 @@ void SlamSystem::addTimingSamples()
 
 }
 
-
-void SlamSystem::debugDisplayDepthMap()
-{
-
+void SlamSystem::debugDisplayDepthMap() {
 
   map->debugPlotDepthMap();
   double scale = 1;
-  if(currentKeyFrame != 0 && currentKeyFrame != 0)
+  if (currentKeyFrame != 0 && currentKeyFrame != 0)
     scale = currentKeyFrame->getScaledCamToWorld().scale();
   // debug plot depthmap
   char buf1[200];
   char buf2[200];
-
 
   snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d / %d",
            map->msUpdate, map->nAvgUpdate,
@@ -639,8 +642,7 @@ void SlamSystem::debugDisplayDepthMap()
            (int)keyFrameGraph->edgesAll.size(),
            1e-6 * (float)keyFrameGraph->totalPoints);
 
-
-  if(onSceenInfoDisplay)
+  if (onSceenInfoDisplay)
     printMessageOnCVImage(map->debugImageDepth, buf1, buf2);
   if (displayDepthMap)
     Util::displayImage( "DebugWindow DEPTH", map->debugImageDepth, false );
@@ -649,16 +651,15 @@ void SlamSystem::debugDisplayDepthMap()
   handleKey(pressedKey);
 }
 
-
-void SlamSystem::takeRelocalizeResult()
-{
+void SlamSystem::takeRelocalizeResult() {
   Frame* keyframe;
   int succFrameID;
   SE3 succFrameToKF_init;
   std::shared_ptr<Frame> succFrame;
+
   relocalizer.stop();
   relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
-  assert(keyframe != 0);
+  assert(keyframe != nullptr);
 
   loadNewCurrentKeyframe(keyframe);
 
@@ -672,18 +673,17 @@ void SlamSystem::takeRelocalizeResult()
       succFrame.get(),
       succFrameToKF_init);
 
-  if(!tracker->trackingWasGood || tracker->lastGoodCount / (tracker->lastGoodCount + tracker->lastBadCount) < 1-0.75f*(1-MIN_GOODPERGOODBAD_PIXEL))
-  {
-    if(enablePrintDebugInfo && printRelocalizationInfo)
+  if (!tracker->trackingWasGood ||
+      tracker->lastGoodCount / (tracker->lastGoodCount + tracker->lastBadCount) < 1-0.75f*(1-MIN_GOODPERGOODBAD_PIXEL)) {
+    if (enablePrintDebugInfo && printRelocalizationInfo)
       printf("RELOCALIZATION FAILED BADLY! discarding result.\n");
     trackingReference->invalidate();
   }
-  else
-  {
+  else {
     keyFrameGraph->addFrame(succFrame.get());
 
     unmappedTrackedFramesMutex.lock();
-    if(unmappedTrackedFrames.size() < 50)
+    if (unmappedTrackedFrames.size() < 50)
       unmappedTrackedFrames.push_back(succFrame);
     unmappedTrackedFramesMutex.unlock();
 
@@ -723,6 +723,7 @@ bool SlamSystem::doMappingIteration() {
 
   // set mappingFrame
   if (trackingIsGood) {
+
     if (!doMapping) {
       //printf("tryToChange refframe, lastScore %f!\n", lastTrackingClosenessScore);
       if (lastTrackingClosenessScore > 1)
@@ -1162,10 +1163,8 @@ void SlamSystem::testConstraint(
   e2_out->robustKernel->setDelta(kernelDelta);
 }
 
-int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH)
-{
-  if(!newKeyFrame->hasTrackingParent())
-  {
+int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH) {
+  if (!newKeyFrame->hasTrackingParent()) {
     newConstraintMutex.lock();
     keyFrameGraph->addKeyFrame(newKeyFrame);
     newConstraintAdded = true;
@@ -1174,9 +1173,8 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     return 0;
   }
 
-  if(!forceParent && (newKeyFrame->lastConstraintTrackedCamToWorld * newKeyFrame->getScaledCamToWorld().inverse()).log().norm() < 0.01)
+  if (!forceParent && (newKeyFrame->lastConstraintTrackedCamToWorld * newKeyFrame->getScaledCamToWorld().inverse()).log().norm() < 0.01)
     return 0;
-
 
   newKeyFrame->lastConstraintTrackedCamToWorld = newKeyFrame->getScaledCamToWorld();
 
@@ -1187,13 +1185,10 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
                      Eigen::aligned_allocator< Frame* > > candidates = trackableKeyFrameSearch->findCandidates(newKeyFrame, fabMapResult, useFABMAP, closeCandidatesTH);
   std::map< Frame*, Sim3, std::less<Frame*>, Eigen::aligned_allocator<std::pair<Frame*, Sim3> > > candidateToFrame_initialEstimateMap;
 
-
   // erase the ones that are already neighbours.
-  for(std::unordered_set<Frame*>::iterator c = candidates.begin(); c != candidates.end();)
-  {
-    if(newKeyFrame->neighbors.find(*c) != newKeyFrame->neighbors.end())
-    {
-      if(enablePrintDebugInfo && printConstraintSearchInfo)
+  for (std::unordered_set<Frame*>::iterator c = candidates.begin(); c != candidates.end();) {
+    if (newKeyFrame->neighbors.find(*c) != newKeyFrame->neighbors.end()) {
+      if (enablePrintDebugInfo && printConstraintSearchInfo)
         printf("SKIPPING %d on %d cause it already exists as constraint.\n", (*c)->id(), newKeyFrame->id());
       c = candidates.erase(c);
     }
@@ -1202,20 +1197,16 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   }
 
   poseConsistencyMutex.lock_shared();
-  for (Frame* candidate : candidates)
-  {
+
+  for (Frame* candidate : candidates) {
     Sim3 candidateToFrame_initialEstimate = newKeyFrame->getScaledCamToWorld().inverse() * candidate->getScaledCamToWorld();
     candidateToFrame_initialEstimateMap[candidate] = candidateToFrame_initialEstimate;
   }
 
   std::unordered_map<Frame*, int> distancesToNewKeyFrame;
-  if(newKeyFrame->hasTrackingParent())
+  if (newKeyFrame->hasTrackingParent())
     keyFrameGraph->calculateGraphDistancesToFrame(newKeyFrame->getTrackingParent(), &distancesToNewKeyFrame);
   poseConsistencyMutex.unlock_shared();
-
-
-
-
 
   // =============== distinguish between close and "far" candidates in Graph =================
   // Do a first check on trackability of close candidates.
@@ -1224,95 +1215,95 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   std::vector<Frame*, Eigen::aligned_allocator<Frame*> > farCandidates;
   Frame* parent = newKeyFrame->hasTrackingParent() ? newKeyFrame->getTrackingParent() : 0;
 
-  int closeFailed = 0;
+  int closeFailed       = 0;
   int closeInconsistent = 0;
 
-  SO3 disturbance = SO3::exp(Sophus::Vector3d(0.05,0,0));
+  SO3 disturbance       = SO3::exp(Sophus::Vector3d(0.05,0,0));
 
-  for (Frame* candidate : candidates)
-  {
+  for (Frame* candidate : candidates) {
     if (candidate->id() == newKeyFrame->id())
       continue;
-    if(!candidate->pose->isInGraph)
+    if (!candidate->pose->isInGraph)
       continue;
-    if(newKeyFrame->hasTrackingParent() && candidate == newKeyFrame->getTrackingParent())
+    if (newKeyFrame->hasTrackingParent() &&
+        candidate == newKeyFrame->getTrackingParent())
       continue;
-    if(candidate->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
+    if (candidate->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
       continue;
 
     SE3 c2f_init = se3FromSim3(candidateToFrame_initialEstimateMap[candidate].inverse()).inverse();
     c2f_init.so3() = c2f_init.so3() * disturbance;
     SE3 c2f = constraintSE3Tracker->trackFrameOnPermaref(candidate, newKeyFrame, c2f_init);
-    if(!constraintSE3Tracker->trackingWasGood) {closeFailed++; continue;}
 
+    if (!constraintSE3Tracker->trackingWasGood) {
+      closeFailed++;
+      continue;
+    }
 
     SE3 f2c_init = se3FromSim3(candidateToFrame_initialEstimateMap[candidate]).inverse();
     f2c_init.so3() = disturbance * f2c_init.so3();
     SE3 f2c = constraintSE3Tracker->trackFrameOnPermaref(newKeyFrame, candidate, f2c_init);
-    if(!constraintSE3Tracker->trackingWasGood) {closeFailed++; continue;}
+    if (!constraintSE3Tracker->trackingWasGood) {
+      closeFailed++;
+      continue;
+    }
 
-    if((f2c.so3() * c2f.so3()).log().norm() >= 0.09) {closeInconsistent++; continue;}
+    if ((f2c.so3() * c2f.so3()).log().norm() >= 0.09) {
+      closeInconsistent++;
+      continue;
+    }
 
     closeCandidates.insert(candidate);
   }
 
-
-
-  int farFailed = 0;
+  int farFailed       = 0;
   int farInconsistent = 0;
-  for (Frame* candidate : candidates)
-  {
+
+  for (Frame* candidate : candidates) {
     if (candidate->id() == newKeyFrame->id())
       continue;
-    if(!candidate->pose->isInGraph)
+    if (!candidate->pose->isInGraph)
       continue;
-    if(newKeyFrame->hasTrackingParent() && candidate == newKeyFrame->getTrackingParent())
+    if (newKeyFrame->hasTrackingParent() &&
+        candidate == newKeyFrame->getTrackingParent())
       continue;
-    if(candidate->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
+    if (candidate->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
       continue;
 
-    if(candidate == fabMapResult)
-    {
+    if (candidate == fabMapResult) {
       farCandidates.push_back(candidate);
       continue;
     }
 
-    if(distancesToNewKeyFrame.at(candidate) < 4)
+    if (distancesToNewKeyFrame.at(candidate) < 4)
       continue;
 
     farCandidates.push_back(candidate);
   }
 
-
-
-
   int closeAll = closeCandidates.size();
   int farAll = farCandidates.size();
 
   // erase the ones that we tried already before (close)
-  for(std::unordered_set<Frame*>::iterator c = closeCandidates.begin(); c != closeCandidates.end();)
-  {
-    if(newKeyFrame->trackingFailed.find(*c) == newKeyFrame->trackingFailed.end())
-    {
+  for (std::unordered_set<Frame*>::iterator c = closeCandidates.begin(); c != closeCandidates.end();) {
+    if (newKeyFrame->trackingFailed.find(*c) == newKeyFrame->trackingFailed.end()) {
       ++c;
       continue;
     }
+
     auto range = newKeyFrame->trackingFailed.equal_range(*c);
 
     bool skip = false;
     Sim3 f2c = candidateToFrame_initialEstimateMap[*c].inverse();
-    for (auto it = range.first; it != range.second; ++it)
-    {
-      if((f2c * it->second).log().norm() < 0.1)
-      {
+    for (auto it = range.first; it != range.second; ++it) {
+      if ((f2c * it->second).log().norm() < 0.1) {
         skip=true;
         break;
       }
     }
 
-    if(skip)
-    {
-      if(enablePrintDebugInfo && printConstraintSearchInfo)
+    if (skip) {
+      if (enablePrintDebugInfo && printConstraintSearchInfo)
         printf("SKIPPING %d on %d (NEAR), cause we already have tried it.\n", (*c)->id(), newKeyFrame->id());
       c = closeCandidates.erase(c);
     }
@@ -1321,26 +1312,22 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   }
 
   // erase the ones that are already neighbours (far)
-  for(unsigned int i=0;i<farCandidates.size();i++)
-  {
-    if(newKeyFrame->trackingFailed.find(farCandidates[i]) == newKeyFrame->trackingFailed.end())
+  for (unsigned int i = 0; i < farCandidates.size(); i++) {
+    if (newKeyFrame->trackingFailed.find(farCandidates[i]) == newKeyFrame->trackingFailed.end())
       continue;
 
     auto range = newKeyFrame->trackingFailed.equal_range(farCandidates[i]);
 
     bool skip = false;
-    for (auto it = range.first; it != range.second; ++it)
-    {
-      if((it->second).log().norm() < 0.2)
-      {
-        skip=true;
+    for (auto it = range.first; it != range.second; ++it) {
+      if ((it->second).log().norm() < 0.2) {
+        skip = true;
         break;
       }
     }
 
-    if(skip)
-    {
-      if(enablePrintDebugInfo && printConstraintSearchInfo)
+    if (skip) {
+      if (enablePrintDebugInfo && printConstraintSearchInfo)
         printf("SKIPPING %d on %d (FAR), cause we already have tried it.\n", farCandidates[i]->id(), newKeyFrame->id());
       farCandidates[i] = farCandidates.back();
       farCandidates.pop_back();
@@ -1348,31 +1335,27 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     }
   }
 
-
-
   if (enablePrintDebugInfo && printConstraintSearchInfo)
     printf("Final Loop-Closure Candidates: %d / %d close (%d failed, %d inconsistent) + %d / %d far (%d failed, %d inconsistent) = %d\n",
-           (int)closeCandidates.size(),closeAll, closeFailed, closeInconsistent,
-           (int)farCandidates.size(), farAll, farFailed, farInconsistent,
+           (int)closeCandidates.size(),
+           closeAll, closeFailed, closeInconsistent,
+           (int)farCandidates.size(),
+           farAll, farFailed, farInconsistent,
            (int)closeCandidates.size() + (int)farCandidates.size());
-
-
 
   // =============== limit number of close candidates ===============
   // while too many, remove the one with the highest connectivity.
-  while((int)closeCandidates.size() > maxLoopClosureCandidates)
-  {
+  while ((int)closeCandidates.size() > maxLoopClosureCandidates) {
     Frame* worst = 0;
     int worstNeighbours = 0;
-    for(Frame* f : closeCandidates)
-    {
+
+    for (Frame* f : closeCandidates) {
       int neightboursInCandidates = 0;
-      for(Frame* n : f->neighbors)
-        if(closeCandidates.find(n) != closeCandidates.end())
+      for (Frame* n : f->neighbors)
+        if (closeCandidates.find(n) != closeCandidates.end())
           neightboursInCandidates++;
 
-      if(neightboursInCandidates > worstNeighbours || worst == 0)
-      {
+      if (neightboursInCandidates > worstNeighbours || worst == 0) {
         worst = f;
         worstNeighbours = neightboursInCandidates;
       }
@@ -1381,57 +1364,43 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     closeCandidates.erase(worst);
   }
 
-
   // =============== limit number of far candidates ===============
   // delete randomly
   int maxNumFarCandidates = (maxLoopClosureCandidates +1) / 2;
-  if(maxNumFarCandidates < 5) maxNumFarCandidates = 5;
-  while((int)farCandidates.size() > maxNumFarCandidates)
-  {
+  if (maxNumFarCandidates < 5) maxNumFarCandidates = 5;
+  while ((int)farCandidates.size() > maxNumFarCandidates) {
     int toDelete = rand() % farCandidates.size();
-    if(farCandidates[toDelete] != fabMapResult)
-    {
+    if (farCandidates[toDelete] != fabMapResult) {
       farCandidates[toDelete] = farCandidates.back();
       farCandidates.pop_back();
     }
   }
-
-
-
-
-
-
 
   // =============== TRACK! ===============
 
   // make tracking reference for newKeyFrame.
   newKFTrackingReference->importFrame(newKeyFrame);
 
-
-  for (Frame* candidate : closeCandidates)
-  {
-    KFConstraintStruct* e1=0;
-    KFConstraintStruct* e2=0;
+  for (Frame* candidate : closeCandidates) {
+    KFConstraintStruct* e1 = 0;
+    KFConstraintStruct* e2 = 0;
 
     testConstraint(
         candidate, e1, e2,
         candidateToFrame_initialEstimateMap[candidate],
         loopclosureStrictness);
 
-    if(enablePrintDebugInfo && printConstraintSearchInfo)
+    if (enablePrintDebugInfo && printConstraintSearchInfo)
       printf(" CLOSE (%d)\n", distancesToNewKeyFrame.at(candidate));
 
-    if(e1 != 0)
-    {
+    if (e1 != 0) {
       constraints.push_back(e1);
       constraints.push_back(e2);
 
       // delete from far candidates if it's in there.
-      for(unsigned int k=0;k<farCandidates.size();k++)
-      {
-        if(farCandidates[k] == candidate)
-        {
-          if(enablePrintDebugInfo && printConstraintSearchInfo)
+      for (unsigned int k = 0;k < farCandidates.size();k++) {
+        if (farCandidates[k] == candidate) {
+          if (enablePrintDebugInfo && printConstraintSearchInfo)
             printf(" DELETED %d from far, as close was successful!\n", candidate->id());
 
           farCandidates[k] = farCandidates.back();
@@ -1441,47 +1410,41 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     }
   }
 
-
-  for (Frame* candidate : farCandidates)
-  {
-    KFConstraintStruct* e1=0;
-    KFConstraintStruct* e2=0;
+  for (Frame* candidate : farCandidates) {
+    KFConstraintStruct* e1 = 0;
+    KFConstraintStruct* e2 = 0;
 
     testConstraint(
         candidate, e1, e2,
         Sim3(),
         loopclosureStrictness);
 
-    if(enablePrintDebugInfo && printConstraintSearchInfo)
+    if (enablePrintDebugInfo && printConstraintSearchInfo)
       printf(" FAR (%d)\n", distancesToNewKeyFrame.at(candidate));
 
-    if(e1 != 0)
-    {
+    if (e1 != 0) {
       constraints.push_back(e1);
       constraints.push_back(e2);
     }
   }
 
+  if (parent != 0 && forceParent) {
+    KFConstraintStruct* e1 = 0;
+    KFConstraintStruct* e2 = 0;
 
-
-  if(parent != 0 && forceParent)
-  {
-    KFConstraintStruct* e1=0;
-    KFConstraintStruct* e2=0;
     testConstraint(
         parent, e1, e2,
         candidateToFrame_initialEstimateMap[parent],
         100);
-    if(enablePrintDebugInfo && printConstraintSearchInfo)
+
+    if (enablePrintDebugInfo && printConstraintSearchInfo)
       printf(" PARENT (0)\n");
 
-    if(e1 != 0)
-    {
+    if (e1 != 0) {
       constraints.push_back(e1);
       constraints.push_back(e2);
     }
-    else
-    {
+    else {
       float downweightFac = 5;
       const float kernelDelta = 5 * sqrt(6000*loopclosureStrictness) / downweightFac;
       printf("warning: reciprocal tracking on new frame failed badly, added odometry edge (Hacky).\n");
@@ -1513,13 +1476,11 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     }
   }
 
-
   newConstraintMutex.lock();
 
   keyFrameGraph->addKeyFrame(newKeyFrame);
-  for(unsigned int i=0;i<constraints.size();i++)
+  for (unsigned int i=0;i<constraints.size();i++)
     keyFrameGraph->insertConstraint(constraints[i]);
-
 
   newConstraintAdded = true;
   newConstraintCreatedSignal.notify_all();
@@ -1528,20 +1489,14 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   newKFTrackingReference->invalidate();
   candidateTrackingReference->invalidate();
 
-
-
   return constraints.size();
 }
 
+bool SlamSystem::optimizationIteration(
+    int itsPerTry, float minChange) {
 
-
-
-bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
-{
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
-
-
 
   g2oGraphAccessMutex.lock();
 
@@ -1550,37 +1505,32 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
   keyFrameGraph->addElementsFromBuffer();
   newConstraintMutex.unlock();
 
-
   // Do the optimization. This can take quite some time!
   int its = keyFrameGraph->optimize(itsPerTry);
-
 
   // save the optimization result.
   poseConsistencyMutex.lock_shared();
   keyFrameGraph->keyframesAllMutex.lock_shared();
   float maxChange = 0;
   float sumChange = 0;
-  float sum = 0;
-  for(size_t i=0;i<keyFrameGraph->keyframesAll.size(); i++)
-  {
+  float sum       = 0;
+
+  for (size_t i = 0; i < keyFrameGraph->keyframesAll.size(); i++) {
     // set edge error sum to zero
     keyFrameGraph->keyframesAll[i]->edgeErrorSum = 0;
     keyFrameGraph->keyframesAll[i]->edgesNum = 0;
 
-    if(!keyFrameGraph->keyframesAll[i]->pose->isInGraph) continue;
-
-
+    if (!keyFrameGraph->keyframesAll[i]->pose->isInGraph) continue;
 
     // get change from last optimization
     Sim3 a = keyFrameGraph->keyframesAll[i]->pose->graphVertex->estimate();
     Sim3 b = keyFrameGraph->keyframesAll[i]->getScaledCamToWorld();
+
     Sophus::Vector7f diff = (a*b.inverse()).log().cast<float>();
 
-
-    for(int j=0;j<7;j++)
-    {
+    for (int j = 0; j < 7; j++) {
       float d = fabsf((float)(diff[j]));
-      if(d > maxChange) maxChange = d;
+      if (d > maxChange) maxChange = d;
       sumChange += d;
     }
     sum +=7;
@@ -1590,8 +1540,7 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
         keyFrameGraph->keyframesAll[i]->pose->graphVertex->estimate());
 
     // add error
-    for(auto edge : keyFrameGraph->keyframesAll[i]->pose->graphVertex->edges())
-    {
+    for (auto edge : keyFrameGraph->keyframesAll[i]->pose->graphVertex->edges()) {
       keyFrameGraph->keyframesAll[i]->edgeErrorSum += ((EdgeSim3*)(edge))->chi2();
       keyFrameGraph->keyframesAll[i]->edgesNum++;
     }
@@ -1603,39 +1552,33 @@ bool SlamSystem::optimizationIteration(int itsPerTry, float minChange)
 
   g2oGraphAccessMutex.unlock();
 
-  if(enablePrintDebugInfo && printOptimizationInfo)
+  if (enablePrintDebugInfo && printOptimizationInfo)
     printf("did %d optimization iterations. Max Pose Parameter Change: %f; avgChange: %f. %s\n", its, maxChange, sumChange / sum,
            maxChange > minChange && its == itsPerTry ? "continue optimizing":"Waiting for addition to graph.");
-
 
   gettimeofday(&tv_end, NULL);
   msOptimizationIteration = 0.9*msOptimizationIteration + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
   nOptimizationIteration++;
 
-
   return maxChange > minChange && its == itsPerTry;
 }
 
-void SlamSystem::optimizeGraph()
-{
+void SlamSystem::optimizeGraph() {
   boost::unique_lock<boost::mutex> g2oLock(g2oGraphAccessMutex);
   keyFrameGraph->optimize(1000);
   g2oLock.unlock();
   mergeOptimizationOffset();
 }
 
-
-SE3 SlamSystem::getCurrentPoseEstimate()
-{
+SE3 SlamSystem::getCurrentPoseEstimate() {
   SE3 camToWorld = SE3();
   keyFrameGraph->allFramePosesMutex.lock_shared();
-  if(keyFrameGraph->allFramePoses.size() > 0)
+  if (keyFrameGraph->allFramePoses.size() > 0)
     camToWorld = se3FromSim3(keyFrameGraph->allFramePoses.back()->getCamToWorld());
   keyFrameGraph->allFramePosesMutex.unlock_shared();
   return camToWorld;
 }
 
-std::vector<FramePoseStruct*, Eigen::aligned_allocator<FramePoseStruct*> > SlamSystem::getAllPoses()
-{
+std::vector<FramePoseStruct*, Eigen::aligned_allocator<FramePoseStruct*> > SlamSystem::getAllPoses() {
   return keyFrameGraph->allFramePoses;
 }

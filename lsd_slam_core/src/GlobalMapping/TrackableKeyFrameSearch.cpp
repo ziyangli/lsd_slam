@@ -48,6 +48,7 @@ std::vector<TrackableKFStruct, Eigen::aligned_allocator<TrackableKFStruct> >
 TrackableKeyFrameSearch::findEuclideanOverlapFrames(Frame* frame, float distanceTH, float angleTH, bool checkBothScales) {
   // basically the maximal angle-difference in viewing direction is angleTH*(average FoV).
   // e.g. if the FoV is 130°, then it is angleTH*130°.
+
   float cosAngleTH = cosf(angleTH*0.5f*(fowX + fowY));
 
   Eigen::Vector3d pos = frame->getScaledCamToWorld().translation();
@@ -66,14 +67,16 @@ TrackableKeyFrameSearch::findEuclideanOverlapFrames(Frame* frame, float distance
 
     // get distance between the frames, scaled to fit the potential reference frame.
     float distFac = graph->keyframesAll[i]->meanIdepth / graph->keyframesAll[i]->getScaledCamToWorld().scale();
-    if (checkBothScales && distFacReciprocal < distFac) distFac = distFacReciprocal;
+    if (checkBothScales && distFacReciprocal < distFac)
+      distFac = distFacReciprocal;
+
     Eigen::Vector3d dist = (pos - otherPos) * distFac;
     float dNorm2 = dist.dot(dist);
-    if(dNorm2 > distanceTH) continue;
+    if (dNorm2 > distanceTH) continue;
 
     Eigen::Vector3d otherViewingDir = graph->keyframesAll[i]->getScaledCamToWorld().rotationMatrix().rightCols<1>();
     float dirDotProd = otherViewingDir.dot(viewingDir);
-    if(dirDotProd < cosAngleTH) continue;
+    if (dirDotProd < cosAngleTH) continue;
 
     potentialReferenceFrames.push_back(TrackableKFStruct());
     potentialReferenceFrames.back().ref = graph->keyframesAll[i];
@@ -90,11 +93,11 @@ Frame* TrackableKeyFrameSearch::findRePositionCandidate(Frame* frame, float maxS
   std::vector<TrackableKFStruct, Eigen::aligned_allocator<TrackableKFStruct> > potentialReferenceFrames =
       findEuclideanOverlapFrames(frame, maxScore / (KFDistWeight*KFDistWeight), 0.75);
 
-  float bestScore = maxScore;
+  float bestScore            = maxScore;
   float bestDist, bestUsage;
-  float bestPoseDiscrepancy = 0;
-  Frame* bestFrame = 0;
-  SE3 bestRefToFrame = SE3();
+  float bestPoseDiscrepancy  = 0;
+  Frame* bestFrame           = nullptr;
+  SE3 bestRefToFrame         = SE3();
   SE3 bestRefToFrame_tracked = SE3();
 
   int checkedSecondary = 0;
@@ -109,7 +112,10 @@ Frame* TrackableKeyFrameSearch::findRePositionCandidate(Frame* frame, float maxS
     gettimeofday(&tv_start, NULL);
     tracker->checkPermaRefOverlap(potentialReferenceFrames[i].ref, potentialReferenceFrames[i].refToFrame);
     gettimeofday(&tv_end, NULL);
-    msTrackPermaRef = 0.9*msTrackPermaRef + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+    msTrackPermaRef = 0.9*msTrackPermaRef +
+                      0.1*(
+                          (tv_end.tv_sec-tv_start.tv_sec)*1000.0f +
+                          (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
     nTrackPermaRef++;
 
     float score = getRefFrameScore(potentialReferenceFrames[i].dist, tracker->pointUsage);
@@ -123,55 +129,53 @@ Frame* TrackableKeyFrameSearch::findRePositionCandidate(Frame* frame, float maxS
       float goodVal = tracker->pointUsage * tracker->lastGoodCount / (tracker->lastGoodCount+tracker->lastBadCount);
       checkedSecondary++;
 
-      if(tracker->trackingWasGood && goodVal > relocalizationTH && newScore < bestScore && poseDiscrepancy < 0.2)
-      {
-        bestPoseDiscrepancy = poseDiscrepancy;
-        bestScore = score;
-        bestFrame = potentialReferenceFrames[i].ref;
-        bestRefToFrame = potentialReferenceFrames[i].refToFrame;
+      if (tracker->trackingWasGood &&
+          goodVal > relocalizationTH &&
+          newScore < bestScore && poseDiscrepancy < 0.2) {
+        bestPoseDiscrepancy    = poseDiscrepancy;
+        bestScore              = score;
+        bestFrame              = potentialReferenceFrames[i].ref;
+        bestRefToFrame         = potentialReferenceFrames[i].refToFrame;
         bestRefToFrame_tracked = RefToFrame_tracked;
-        bestDist = dist.dot(dist);
-        bestUsage = tracker->pointUsage;
+        bestDist               = dist.dot(dist);
+        bestUsage              = tracker->pointUsage;
       }
     }
   }
 
-  if(bestFrame != 0)
-  {
-    if(enablePrintDebugInfo && printRelocalizationInfo)
+  if (bestFrame != nullptr) {
+    if (enablePrintDebugInfo && printRelocalizationInfo)
       printf("FindReferences for %d: Checked %d (%d). dist %.3f + usage %.3f = %.3f. pose discrepancy %.2f. TAKE %d!\n",
-             (int)frame->id(), (int)potentialReferenceFrames.size(), checkedSecondary,
+             (int)frame->id(), (int)potentialReferenceFrames.size(),
+             checkedSecondary,
              bestDist, bestUsage, bestScore,
              bestPoseDiscrepancy, bestFrame->id());
     return bestFrame;
   }
-  else
-  {
-    if(enablePrintDebugInfo && printRelocalizationInfo)
+  else {
+    if (enablePrintDebugInfo && printRelocalizationInfo)
       printf("FindReferences for %d: Checked %d (%d), bestScore %.2f. MAKE NEW\n",
-             (int)frame->id(), (int)potentialReferenceFrames.size(), checkedSecondary, bestScore);
+             (int)frame->id(), (int)potentialReferenceFrames.size(),
+             checkedSecondary, bestScore);
     return 0;
   }
 }
 
-std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>, Eigen::aligned_allocator< Frame* > > TrackableKeyFrameSearch::findCandidates(Frame* keyframe, Frame* &fabMapResult_out, bool includeFABMAP, bool closenessTH)
-{
+std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>, Eigen::aligned_allocator< Frame* > > TrackableKeyFrameSearch::findCandidates(Frame* keyframe, Frame* &fabMapResult_out, bool includeFABMAP, bool closenessTH) {
   std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>, Eigen::aligned_allocator< Frame* > > results;
 
   // Add all candidates that are similar in an euclidean sense.
   std::vector<TrackableKFStruct, Eigen::aligned_allocator<TrackableKFStruct> > potentialReferenceFrames =
       findEuclideanOverlapFrames(keyframe, closenessTH * 15 / (KFDistWeight*KFDistWeight), 1.0 - 0.25 * closenessTH, true);
-  for(unsigned int i=0;i<potentialReferenceFrames.size();i++)
+  for (unsigned int i = 0; i < potentialReferenceFrames.size(); i++)
     results.insert(potentialReferenceFrames[i].ref);
 
   int appearanceBased = 0;
   fabMapResult_out = 0;
-  if(includeFABMAP)
-  {
+  if (includeFABMAP) {
     // Add Appearance-based Candidate, and all it's neighbours.
     fabMapResult_out = findAppearanceBasedCandidate(keyframe);
-    if(fabMapResult_out != nullptr)
-    {
+    if (fabMapResult_out != nullptr) {
       results.insert(fabMapResult_out);
       results.insert(fabMapResult_out->neighbors.begin(), fabMapResult_out->neighbors.end());
       appearanceBased = 1 + fabMapResult_out->neighbors.size();
@@ -185,18 +189,14 @@ std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>, Eigen::alig
   return results;
 }
 
-Frame* TrackableKeyFrameSearch::findAppearanceBasedCandidate(Frame* keyframe)
-{
+Frame* TrackableKeyFrameSearch::findAppearanceBasedCandidate(Frame* keyframe) {
 #ifdef HAVE_FABMAP
-  if(!useFabMap) return nullptr;
+  if (!useFabMap) return nullptr;
 
-
-  if (! fabMap.isValid())
-  {
+  if (!fabMap.isValid()) {
     printf("Error: called findAppearanceBasedCandidate(), but FabMap instance is not valid!\n");
     return nullptr;
   }
-
 
   int newID, loopID;
   fabMap.compareAndAdd(keyframe, &newID, &loopID);

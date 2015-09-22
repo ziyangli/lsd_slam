@@ -251,11 +251,10 @@ void KeyFrameGraph::addKeyFrame(Frame* frame)
 
 }
 
-void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
-{
+void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint) {
   EdgeSim3* edge = new EdgeSim3();
   edge->setId(nextEdgeId);
-  ++ nextEdgeId;
+  ++nextEdgeId;
 
   totalEdges++;
 
@@ -272,16 +271,12 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
   constraint->edge = edge;
   newEdgeBuffer.push_back(constraint);
 
-
   constraint->firstFrame->neighbors.insert(constraint->secondFrame);
   constraint->secondFrame->neighbors.insert(constraint->firstFrame);
 
-  for(int i=0;i<totalVertices;i++)
-  {
+  for (int i = 0; i < totalVertices; i++) {
     //shortestDistancesMap
   }
-
-
 
   edgesListsMutex.lock();
   constraint->idxInAllEdges = edgesAll.size();
@@ -289,14 +284,11 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
   edgesListsMutex.unlock();
 }
 
-
-bool KeyFrameGraph::addElementsFromBuffer()
-{
+bool KeyFrameGraph::addElementsFromBuffer() {
   bool added = false;
 
   keyframesForRetrackMutex.lock();
-  for (auto newKF : newKeyframesBuffer)
-  {
+  for (auto newKF : newKeyframesBuffer) {
     graph.addVertex(newKF->pose->graphVertex);
     assert(!newKF->pose->isInGraph);
     newKF->pose->isInGraph = true;
@@ -305,11 +297,11 @@ bool KeyFrameGraph::addElementsFromBuffer()
 
     added = true;
   }
+
   keyframesForRetrackMutex.unlock();
 
   newKeyframesBuffer.clear();
-  for (auto edge : newEdgeBuffer)
-  {
+  for (auto edge : newEdgeBuffer) {
     graph.addEdge(edge->edge);
     added = true;
   }

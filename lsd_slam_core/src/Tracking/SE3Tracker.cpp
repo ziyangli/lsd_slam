@@ -112,15 +112,15 @@ float SE3Tracker::checkPermaRefOverlap(Frame* reference, SE3 referenceToFrameOrg
   Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
   boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
 
-  int w2 = reference->width(QUICK_KF_CHECK_LVL)-1;
-  int h2 = reference->height(QUICK_KF_CHECK_LVL)-1;
+  int w2 = reference->width(QUICK_KF_CHECK_LVL) - 1;
+  int h2 = reference->height(QUICK_KF_CHECK_LVL) - 1;
   Eigen::Matrix3f KLvl = reference->K(QUICK_KF_CHECK_LVL);
   float fx_l = KLvl(0,0);
   float fy_l = KLvl(1,1);
   float cx_l = KLvl(0,2);
   float cy_l = KLvl(1,2);
 
-  Eigen::Matrix3f rotMat = referenceToFrame.rotationMatrix();
+  Eigen::Matrix3f rotMat   = referenceToFrame.rotationMatrix();
   Eigen::Vector3f transVec = referenceToFrame.translation();
 
   const Eigen::Vector3f* refPoint_max = reference->permaRef_posData + reference->permaRefNumPts;
@@ -140,7 +140,6 @@ float SE3Tracker::checkPermaRefOverlap(Frame* reference, SE3 referenceToFrameOrg
   pointUsage = usageCount / (float)reference->permaRefNumPts;
   return pointUsage;
 }
-
 
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
