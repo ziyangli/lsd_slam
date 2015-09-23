@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   InputImageStream* inputStream = new ROSImageStreamThread();
 
   std::string calibFile;
-  if(ros::param::get("~calib", calibFile)) {
+  if (ros::param::get("~calib", calibFile)) {
     ros::param::del("~calib");
     inputStream->setCalibration(calibFile);
   }
