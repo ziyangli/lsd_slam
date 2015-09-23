@@ -29,21 +29,22 @@ int FramePoseStruct::cacheValidCounter = 0;
 int privateFramePoseStructAllocCount = 0;
 
 FramePoseStruct::FramePoseStruct(Frame* frame) {
-  cacheValidFor = -1;
-  isOptimized = false;
-  thisToParent_raw = camToWorld = camToWorld_new = Sim3();
-  this->frame = frame;
-  frameID = frame->id();
-  trackingParent = 0;
+  cacheValidFor       = -1;
+  isOptimized         = false;
+  this->frame         = frame;
+  frameID             = frame->id();
+  trackingParent      = 0;
   isRegisteredToGraph = false;
-  hasUnmergedPose = false;
-  isInGraph = false;
-
-  this->graphVertex = nullptr;
+  hasUnmergedPose     = false;
+  isInGraph           = false;
+  this->graphVertex   = nullptr;
+  thisToParent_raw = camToWorld = camToWorld_new = Sim3();
 
   privateFramePoseStructAllocCount++;
+
   if (enablePrintDebugInfo && printMemoryDebugInfo)
-    printf("ALLOCATED pose %d, now there are %d\n", frameID, privateFramePoseStructAllocCount);
+    printf("ALLOCATED pose %d, now there are %d\n",
+           frameID, privateFramePoseStructAllocCount);
 }
 
 FramePoseStruct::~FramePoseStruct() {

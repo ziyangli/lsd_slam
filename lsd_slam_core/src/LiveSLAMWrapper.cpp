@@ -95,6 +95,7 @@ void LiveSLAMWrapper::Loop() {
         continue;
     }
 
+    // no need to lock first???
     TimestampedMat image = imageStream->getBuffer()->first();
     imageStream->getBuffer()->popFront();
 
@@ -132,10 +133,9 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime) {
   }
 }
 
-void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
-{
+void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time) {
   Sophus::Quaternionf quat = camToWorld.unit_quaternion().cast<float>();
-  Eigen::Vector3f trans = camToWorld.translation().cast<float>();
+  Eigen::Vector3f trans    = camToWorld.translation().cast<float>();
 
   char buffer[1000];
   int num = snprintf(buffer, 1000, "%f %f %f %f %f %f %f %f\n",
@@ -148,7 +148,7 @@ void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
                      quat.z(),
                      quat.w());
 
-  if(outFile == 0)
+  if (outFile == 0)
     outFile = new std::ofstream(outFileName.c_str());
   outFile->write(buffer,num);
   outFile->flush();
@@ -161,13 +161,13 @@ void LiveSLAMWrapper::requestReset() {
 
 void LiveSLAMWrapper::resetAll() {
 
-  if(monoOdometry != nullptr) {
+  if (monoOdometry != nullptr) {
     delete monoOdometry;
     printf("Deleted SlamSystem Object!\n");
 
     Sophus::Matrix3f K;
     K << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
-    monoOdometry = new SlamSystem(width,height,K, doSlam);
+    monoOdometry = new SlamSystem(width, height, K, doSlam);
     monoOdometry->setVisualization(outputWrapper);
   }
 

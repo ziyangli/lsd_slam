@@ -34,7 +34,7 @@ struct TimestampedObject {
   Timestamp timestamp;
 };
 
-typedef TimestampedObject< cv::Mat > TimestampedMat;
+typedef TimestampedObject<cv::Mat> TimestampedMat;
 }
 
 #endif

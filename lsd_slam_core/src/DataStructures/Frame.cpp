@@ -364,63 +364,62 @@ bool Frame::minimizeInMemory() {
   return false;
 }
 
-void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp)
-{
-  data.id = id;
+void Frame::initialize(int id, int width, int height,
+                       const Eigen::Matrix3f& K, double timestamp) {
 
-  pose = new FramePoseStruct(this);
+  data.id                 = id;
 
-  data.K[0] = K;
-  data.fx[0] = K(0,0);
-  data.fy[0] = K(1,1);
-  data.cx[0] = K(0,2);
-  data.cy[0] = K(1,2);
+  pose                    = new FramePoseStruct(this);
 
-  data.KInv[0] = K.inverse();
-  data.fxInv[0] = data.KInv[0](0,0);
-  data.fyInv[0] = data.KInv[0](1,1);
-  data.cxInv[0] = data.KInv[0](0,2);
-  data.cyInv[0] = data.KInv[0](1,2);
+  data.K[0]               = K;
+  data.fx[0]              = K(0, 0);
+  data.fy[0]              = K(1, 1);
+  data.cx[0]              = K(0, 2);
+  data.cy[0]              = K(1, 2);
 
-  data.timestamp = timestamp;
+  data.KInv[0]            = K.inverse();
+  data.fxInv[0]           = data.KInv[0](0, 0);
+  data.fyInv[0]           = data.KInv[0](1, 1);
+  data.cxInv[0]           = data.KInv[0](0, 2);
+  data.cyInv[0]           = data.KInv[0](1, 2);
 
-  data.hasIDepthBeenSet = false;
+  data.timestamp          = timestamp;
+
+  data.hasIDepthBeenSet   = false;
   depthHasBeenUpdatedFlag = false;
 
-  referenceID = -1;
-  referenceLevel = -1;
+  referenceID             = -1;
+  referenceLevel          = -1;
 
-  numMappablePixels = -1;
+  numMappablePixels       = -1;
 
-  for (int level = 0; level < PYRAMID_LEVELS; ++ level)
-  {
-    data.width[level] = width >> level;
-    data.height[level] = height >> level;
+  for (int level = 0; level < PYRAMID_LEVELS; ++ level) {
+    data.width[level]             = width >> level;
+    data.height[level]            = height >> level;
 
-    data.imageValid[level] = false;
-    data.gradientsValid[level] = false;
+    data.imageValid[level]        = false;
+    data.gradientsValid[level]    = false;
     data.maxGradientsValid[level] = false;
-    data.idepthValid[level] = false;
-    data.idepthVarValid[level] = false;
+    data.idepthValid[level]       = false;
+    data.idepthVarValid[level]    = false;
 
-    data.image[level] = 0;
-    data.gradients[level] = 0;
-    data.maxGradients[level] = 0;
-    data.idepth[level] = 0;
-    data.idepthVar[level] = 0;
-    data.reActivationDataValid = false;
+    data.image[level]             = 0;
+    data.gradients[level]         = 0;
+    data.maxGradients[level]      = 0;
+    data.idepth[level]            = 0;
+    data.idepthVar[level]         = 0;
+    data.reActivationDataValid    = false;
 
-    //      data.refIDValid[level] = false;
+    // data.refIDValid[level] = false;
 
-    if (level > 0)
-    {
+    if (level > 0) {
       data.fx[level] = data.fx[level-1] * 0.5;
       data.fy[level] = data.fy[level-1] * 0.5;
       data.cx[level] = (data.cx[0] + 0.5) / ((int)1<<level) - 0.5;
       data.cy[level] = (data.cy[0] + 0.5) / ((int)1<<level) - 0.5;
 
       data.K[level]  << data.fx[level], 0.0, data.cx[level], 0.0, data.fy[level], data.cy[level], 0.0, 0.0, 1.0;    // synthetic
-      data.KInv[level] = (data.K[level]).inverse();
+      data.KInv[level]  = (data.K[level]).inverse();
 
       data.fxInv[level] = data.KInv[level](0,0);
       data.fyInv[level] = data.KInv[level](1,1);
