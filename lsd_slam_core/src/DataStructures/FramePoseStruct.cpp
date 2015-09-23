@@ -33,7 +33,7 @@ FramePoseStruct::FramePoseStruct(Frame* frame) {
   isOptimized         = false;
   this->frame         = frame;
   frameID             = frame->id();
-  trackingParent      = 0;
+  trackingParent      = nullptr;
   isRegisteredToGraph = false;
   hasUnmergedPose     = false;
   isInGraph           = false;
@@ -50,14 +50,15 @@ FramePoseStruct::FramePoseStruct(Frame* frame) {
 FramePoseStruct::~FramePoseStruct() {
   privateFramePoseStructAllocCount--;
   if (enablePrintDebugInfo && printMemoryDebugInfo)
-    printf("DELETED pose %d, now there are %d\n", frameID, privateFramePoseStructAllocCount);
+    printf("DELETED pose %d, now there are %d\n",
+           frameID, privateFramePoseStructAllocCount);
 }
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld) {
   if (!isInGraph)
     return;
 
-  camToWorld_new = camToWorld;
+  camToWorld_new  = camToWorld;
   hasUnmergedPose = true;
 }
 
