@@ -27,6 +27,8 @@
 #include <ros/callback_queue.h>
 #include <cv_bridge/cv_bridge.h>
 
+#include <nav_msgs/Odometry.h>
+
 #include "util/settings.h"
 #include "ROSImageStreamThread.h"
 
@@ -38,6 +40,9 @@ ROSImageStreamThread::ROSImageStreamThread() {
   // subscribe
   vid_channel = nh_.resolveName("image");
   vid_sub     = nh_.subscribe(vid_channel, 1, &ROSImageStreamThread::vidCb, this);
+
+  odom_channel = nh_.resolveName("odom");
+  odom_sub     = nh_.subscribe(odom_channel, 1, &ROSImageStreamThread::odomCb, this);
 
   // wait for cam calib
   width_ = height_ = 0;
@@ -93,6 +98,10 @@ void ROSImageStreamThread::run() {
 void ROSImageStreamThread::operator()() {
   ros::spin();
   exit(0);
+}
+
+void ROSImageStreamThread::odomCb(const nav_msgs::Odometry& odom) {
+  odom_queue->push(odom);
 }
 
 void ROSImageStreamThread::vidCb(

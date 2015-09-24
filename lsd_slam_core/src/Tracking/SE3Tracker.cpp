@@ -259,8 +259,9 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
-SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame,
-                           const SE3& frameToReference_initialEstimate) {
+SE3 SE3Tracker::trackFrame(
+    TrackingReference* reference, Frame* frame,
+    const SE3& frameToReference_initialEstimate) {
 
   // lock current frame
   boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
@@ -326,7 +327,8 @@ SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame,
 
     // LM optimization
     float LM_lambda = settings.lambdaInitial[lvl];
-    for (int iteration = 0; iteration < settings.maxItsPerLvl[lvl]; iteration++) {
+    for (int iteration = 0;
+         iteration < settings.maxItsPerLvl[lvl]; iteration++) {
 
       callOptimized(calculateWarpUpdate, (ls));
 

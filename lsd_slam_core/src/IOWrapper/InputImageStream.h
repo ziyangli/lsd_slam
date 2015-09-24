@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include <queue>
+#include <nav_msgs/Odometry.h>
+
 #include "IOWrapper/NotifyBuffer.h"
 #include "IOWrapper/TimestampedObject.h"
 
@@ -46,6 +49,10 @@ class InputImageStream {
    */
   inline NotifyBuffer<TimestampedMat>* getBuffer() {return imageBuffer;};
 
+  inline std::queue<nav_msgs::Odometry>* getOdomBuffer() {
+    return odom_queue;
+  }
+
   /**
    * Gets the Camera Calibration. To avoid any dependencies, just as simple float / int's.
    */
@@ -60,5 +67,7 @@ class InputImageStream {
   NotifyBuffer<TimestampedMat>* imageBuffer;
   float fx_, fy_, cx_, cy_;
   int width_, height_;
+
+  std::queue<nav_msgs::Odometry>* odom_queue;
 };
 }

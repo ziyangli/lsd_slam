@@ -21,6 +21,9 @@
 #include <iostream>
 #include <vector>
 
+#include <queue>
+#include <nav_msgs/Odometry.h>
+
 #include "LiveSLAMWrapper.h"
 #include "util/SophusUtil.h"
 
@@ -98,6 +101,14 @@ void LiveSLAMWrapper::Loop() {
     // no need to lock first???
     TimestampedMat image = imageStream->getBuffer()->first();
     imageStream->getBuffer()->popFront();
+
+    printf("new image");
+    std::queue<nav_msgs::Odometry>* odom_queue = imageStream->getOdomBuffer();
+    while (!odom_queue->empty()) {
+      printf("time stamp %f", odom_queue->front().header.stamp.toSec());
+      odom_queue->pop();
+      break;
+    }
 
     // process image
     // Util::displayImage("MyVideo", image.data);

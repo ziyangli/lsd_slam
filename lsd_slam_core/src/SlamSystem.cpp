@@ -49,7 +49,6 @@
 
 using namespace lsd_slam;
 
-
 SlamSystem::SlamSystem(int w, int h,
                        Eigen::Matrix3f K, bool enableSLAM) :
     SLAMEnabled(enableSLAM),
@@ -877,6 +876,11 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilM
 
   //////////////////////////////
   // get R & T
+  // while (!odom_queue.empty()) {
+
+
+  // }
+
   SE3 newRefToFrame_poseUpdate = tracker->trackFrame(
       trackingReference,  // by zli: a vector of kfs?
       trackingNewFrame.get(),

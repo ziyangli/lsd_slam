@@ -59,6 +59,8 @@ class ROSImageStreamThread : public InputImageStream {
   void vidCb(const sensor_msgs::ImageConstPtr img);
   void infoCb(const sensor_msgs::CameraInfoConstPtr info);
 
+  void odomCb(const nav_msgs::Odometry& odom);
+
  private:
 
   bool haveCalib;
@@ -68,6 +70,9 @@ class ROSImageStreamThread : public InputImageStream {
 
   std::string vid_channel;
   ros::Subscriber vid_sub;
+
+  std::string odom_channel;
+  ros::Subscriber odom_sub;
 
   int lastSEQ;
 };
