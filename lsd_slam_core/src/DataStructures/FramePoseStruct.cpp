@@ -26,18 +26,18 @@ namespace lsd_slam {
 // this is how a static member inited.
 int FramePoseStruct::cacheValidCounter = 0;
 
-int privateFramePoseStructAllocCount = 0;
+int privateFramePoseStructAllocCount   = 0;
 
 FramePoseStruct::FramePoseStruct(Frame* frame) {
   cacheValidFor       = -1;
   isOptimized         = false;
-  this->frame         = frame;
-  frameID             = frame->id();
-  trackingParent      = nullptr;
   isRegisteredToGraph = false;
   hasUnmergedPose     = false;
   isInGraph           = false;
+  trackingParent      = nullptr;
   this->graphVertex   = nullptr;
+  this->frame         = frame;
+  frameID             = frame->id();
   thisToParent_raw = camToWorld = camToWorld_new = Sim3();
 
   privateFramePoseStructAllocCount++;

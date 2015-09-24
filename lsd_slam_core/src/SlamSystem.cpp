@@ -89,6 +89,7 @@ SlamSystem::SlamSystem(int w, int h,
   newKFTrackingReference         = nullptr;
   candidateTrackingReference     = nullptr;
   trackableKeyFrameSearch        = nullptr;
+
   if (SLAMEnabled) {
     constraintSE3Tracker         = new SE3Tracker(w, h, K);
     constraintTracker            = new Sim3Tracker(w, h, K);

@@ -797,7 +797,7 @@ void DepthMap::regularizeDepthMap(bool removeOcclusions, int validityTH) {
 void DepthMap::initializeRandomly(Frame* new_frame) {
   activeKeyFramelock          = new_frame->getActiveLock();
   activeKeyFrame              = new_frame;
-  activeKeyFrameImageData     = activeKeyFrame->image(0);  // level 0?
+  activeKeyFrameImageData     = activeKeyFrame->image(0);
   activeKeyFrameIsReactivated = false;
 
   // max gradient of each pixel

@@ -418,7 +418,7 @@ inline bool* Frame::refPixelWasGoodNoCreate() {
 
 inline void Frame::clear_refPixelWasGood() {
   FrameMemory::getInstance().returnBuffer(reinterpret_cast<float*>(data.refPixelWasGood));
-  data.refPixelWasGood=0;
+  data.refPixelWasGood = nullptr;
 }
 
 }

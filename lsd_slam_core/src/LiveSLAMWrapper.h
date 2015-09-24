@@ -33,19 +33,14 @@ namespace cv {
 class Mat;
 }
 
-
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class SlamSystem;
 class LiveSLAMWrapperROS;
 class InputImageStream;
 class Output3DWrapper;
 
-
-struct LiveSLAMWrapper : public Notifiable
-{
+struct LiveSLAMWrapper : public Notifiable {
   friend class LiveSLAMWrapperROS;
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -54,7 +49,6 @@ struct LiveSLAMWrapper : public Notifiable
 
   /** Destructor. */
   ~LiveSLAMWrapper();
-
 
   /** Runs the main processing loop. Will never return. */
   void Loop();
@@ -70,7 +64,6 @@ struct LiveSLAMWrapper : public Notifiable
 
   /** Writes the given time and pose to the outFile. */
   void logCameraPose(const SE3& camToWorld, double time);
-
 
   inline SlamSystem* getSlamSystem() {return monoOdometry;}
 
@@ -90,7 +83,6 @@ struct LiveSLAMWrapper : public Notifiable
 
   float fx, fy, cx, cy;
   int width, height;
-
 
   int imageSeqNumber;
 

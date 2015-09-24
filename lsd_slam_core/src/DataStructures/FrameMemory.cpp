@@ -91,7 +91,7 @@ float* FrameMemory::getFloatBuffer(unsigned int size) {
 }
 
 void FrameMemory::returnBuffer(void* buffer) {
-  if (buffer == 0) return;
+  if (buffer == nullptr) return;
 
   boost::unique_lock<boost::mutex> lock(accessMutex);
 
@@ -100,7 +100,7 @@ void FrameMemory::returnBuffer(void* buffer) {
   if (availableBuffers.count(size) > 0)
     availableBuffers.at(size).push_back(buffer);
   else {
-    std::vector< void* > availableOfSize;
+    std::vector<void*> availableOfSize;
     availableOfSize.push_back(buffer);
     availableBuffers.insert(std::make_pair(size, availableOfSize));
   }

@@ -27,10 +27,19 @@ namespace lsd_slam {
 
 int privateFrameAllocCount = 0;
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image) {
+Frame::Frame(
+    int id, int width, int height,
+    const Eigen::Matrix3f& K,
+    double timestamp,
+    const unsigned char* image) {
   initialize(id, width, height, K, timestamp);
 
   data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+
+  // by zli: memcpy is not an option since data.image is float and image is uchar?
+  // memcpy(&data.image[0], image, sizeof(float) * data.width[0] * data.height[0]);
+
+  // pointer to end of img
   float* maxPt = data.image[0] + data.width[0]*data.height[0];
 
   for(float* pt = data.image[0]; pt < maxPt; pt++) {
@@ -42,11 +51,16 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 
   privateFrameAllocCount++;
 
-  if(enablePrintDebugInfo && printMemoryDebugInfo)
-    printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
+  if (enablePrintDebugInfo && printMemoryDebugInfo)
+    printf("ALLOCATED frame %d, now there are %d\n",
+           this->id(), privateFrameAllocCount);
 }
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image) {
+Frame::Frame(
+    int id, int width, int height,
+    const Eigen::Matrix3f& K,
+    double timestamp,
+    const float* image) {
   initialize(id, width, height, K, timestamp);
 
   data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
@@ -55,8 +69,9 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 
   privateFrameAllocCount++;
 
-  if(enablePrintDebugInfo && printMemoryDebugInfo)
-    printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
+  if (enablePrintDebugInfo && printMemoryDebugInfo)
+    printf("ALLOCATED frame %d, now there are %d\n",
+           this->id(), privateFrameAllocCount);
 }
 
 Frame::~Frame() {
@@ -307,38 +322,35 @@ void Frame::require(int dataFlags, int level) {
   }
 }
 
-void Frame::release(int dataFlags, bool pyramidsOnly, bool invalidateOnly)
-{
-  for (int level = (pyramidsOnly ? 1 : 0); level < PYRAMID_LEVELS; ++ level)
-  {
-    if ((dataFlags & IMAGE) && data.imageValid[level])
-    {
+void Frame::release(int dataFlags, bool pyramidsOnly, bool invalidateOnly) {
+  for (int level = (pyramidsOnly ? 1 : 0); level < PYRAMID_LEVELS; ++ level) {
+    if ((dataFlags & IMAGE) && data.imageValid[level]) {
       data.imageValid[level] = false;
-      if(!invalidateOnly)
+      if (!invalidateOnly)
         releaseImage(level);
     }
-    if ((dataFlags & GRADIENTS) && data.gradientsValid[level])
-    {
+
+    if ((dataFlags & GRADIENTS) && data.gradientsValid[level]) {
       data.gradientsValid[level] = false;
-      if(!invalidateOnly)
+      if (!invalidateOnly)
         releaseGradients(level);
     }
-    if ((dataFlags & MAX_GRADIENTS) && data.maxGradientsValid[level])
-    {
+
+    if ((dataFlags & MAX_GRADIENTS) && data.maxGradientsValid[level]) {
       data.maxGradientsValid[level] = false;
-      if(!invalidateOnly)
+      if (!invalidateOnly)
         releaseMaxGradients(level);
     }
-    if ((dataFlags & IDEPTH) && data.idepthValid[level])
-    {
+
+    if ((dataFlags & IDEPTH) && data.idepthValid[level]) {
       data.idepthValid[level] = false;
-      if(!invalidateOnly)
+      if (!invalidateOnly)
         releaseIDepth(level);
     }
-    if ((dataFlags & IDEPTH_VAR) && data.idepthVarValid[level])
-    {
+
+    if ((dataFlags & IDEPTH_VAR) && data.idepthVarValid[level]) {
       data.idepthVarValid[level] = false;
-      if(!invalidateOnly)
+      if (!invalidateOnly)
         releaseIDepthVar(level);
     }
   }
@@ -348,10 +360,10 @@ bool Frame::minimizeInMemory() {
   if (activeMutex.timed_lock(boost::posix_time::milliseconds(10))) {
     buildMutex.lock();
     if (enablePrintDebugInfo && printMemoryDebugInfo)
-      printf("minimizing frame %d\n",id());
+      printf("minimizing frame %d\n", id());
 
-    release(IMAGE | IDEPTH | IDEPTH_VAR, true, false);
-    release(GRADIENTS | MAX_GRADIENTS, false, false);
+    release(IMAGE | IDEPTH | IDEPTH_VAR, true,  false);
+    release(GRADIENTS | MAX_GRADIENTS,   false, false);
 
     clear_refPixelWasGood();
 
@@ -364,8 +376,9 @@ bool Frame::minimizeInMemory() {
   return false;
 }
 
-void Frame::initialize(int id, int width, int height,
-                       const Eigen::Matrix3f& K, double timestamp) {
+void Frame::initialize(
+    int id, int width, int height,
+    const Eigen::Matrix3f& K, double timestamp) {
 
   data.id                 = id;
 
@@ -394,7 +407,8 @@ void Frame::initialize(int id, int width, int height,
   numMappablePixels       = -1;
 
   for (int level = 0; level < PYRAMID_LEVELS; ++ level) {
-    data.width[level]             = width >> level;
+    // higher level, halfen the size
+    data.width[level]             = width  >> level;
     data.height[level]            = height >> level;
 
     data.imageValid[level]        = false;
@@ -403,11 +417,11 @@ void Frame::initialize(int id, int width, int height,
     data.idepthValid[level]       = false;
     data.idepthVarValid[level]    = false;
 
-    data.image[level]             = 0;
-    data.gradients[level]         = 0;
-    data.maxGradients[level]      = 0;
-    data.idepth[level]            = 0;
-    data.idepthVar[level]         = 0;
+    data.image[level]             = nullptr;
+    data.gradients[level]         = nullptr;
+    data.maxGradients[level]      = nullptr;
+    data.idepth[level]            = nullptr;
+    data.idepthVar[level]         = nullptr;
     data.reActivationDataValid    = false;
 
     // data.refIDValid[level] = false;
@@ -418,7 +432,10 @@ void Frame::initialize(int id, int width, int height,
       data.cx[level] = (data.cx[0] + 0.5) / ((int)1<<level) - 0.5;
       data.cy[level] = (data.cy[0] + 0.5) / ((int)1<<level) - 0.5;
 
-      data.K[level]  << data.fx[level], 0.0, data.cx[level], 0.0, data.fy[level], data.cy[level], 0.0, 0.0, 1.0;    // synthetic
+      data.K[level]  <<
+          data.fx[level], 0.0,            data.cx[level],
+          0.0,            data.fy[level], data.cy[level],
+          0.0,            0.0,            1.0;  // synthetic
       data.KInv[level]  = (data.K[level]).inverse();
 
       data.fxInv[level] = data.KInv[level](0,0);
@@ -428,28 +445,32 @@ void Frame::initialize(int id, int width, int height,
     }
   }
 
-  data.validity_reAct = 0;
-  data.idepthVar_reAct = 0;
-  data.idepth_reAct = 0;
+  // reactivation?
+  data.validity_reAct      = nullptr;
+  data.idepthVar_reAct     = nullptr;
+  data.idepth_reAct        = nullptr;
 
-  data.refPixelWasGood = 0;
+  data.refPixelWasGood     = nullptr;
 
-  permaRefNumPts = 0;
-  permaRef_colorAndVarData = 0;
-  permaRef_posData = 0;
+  permaRefNumPts           = 0;
+  permaRef_colorAndVarData = nullptr;
+  permaRef_posData         = nullptr;
 
-  meanIdepth = 1;
-  numPoints = 0;
+  meanIdepth               = 1;
+  numPoints                = 0;
 
-  numFramesTrackedOnThis = numMappedOnThis = numMappedOnThisTotal = 0;
+  numFramesTrackedOnThis   = 0;
+  numMappedOnThis          = 0;
+  numMappedOnThisTotal     = 0;
 
-  idxInKeyframes = -1;
+  idxInKeyframes           = -1;
 
-  edgeErrorSum = edgesNum = 1;
+  edgeErrorSum             = 1;
+  edgesNum                 = 1;
 
   lastConstraintTrackedCamToWorld = Sim3();
 
-  isActive = false;
+  isActive                 = false;
 }
 
 void Frame::setDepth_Allocate()
@@ -598,23 +619,20 @@ void Frame::buildImage(int level)
   data.imageValid[level] = true;
 }
 
-void Frame::releaseImage(int level)
-{
-  if (level == 0)
-  {
+void Frame::releaseImage(int level) {
+  if (level == 0) {
     printf("Frame::releaseImage(0): Storing image on disk is not supported yet! No-op.\n");
     return;
   }
   FrameMemory::getInstance().returnBuffer(data.image[level]);
-  data.image[level] = 0;
+  data.image[level] = nullptr;
 }
 
-void Frame::buildGradients(int level)
-{
+void Frame::buildGradients(int level) {
   require(IMAGE, level);
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-  if(data.gradientsValid[level])
+  if (data.gradientsValid[level])
     return;
 
   if(enablePrintDebugInfo && printFrameBuildDebugInfo)
@@ -648,16 +666,12 @@ void Frame::buildGradients(int level)
   data.gradientsValid[level] = true;
 }
 
-void Frame::releaseGradients(int level)
-{
+void Frame::releaseGradients(int level) {
   FrameMemory::getInstance().returnBuffer(reinterpret_cast<float*>(data.gradients[level]));
-  data.gradients[level] = 0;
+  data.gradients[level] = nullptr;
 }
 
-
-
-void Frame::buildMaxGradients(int level)
-{
+void Frame::buildMaxGradients(int level) {
   require(GRADIENTS, level);
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
@@ -707,27 +721,24 @@ void Frame::buildMaxGradients(int level)
   maxgrad_pt = data.maxGradients[level] + width+1;
   maxgrad_pt_max = data.maxGradients[level] + width*(height-1)-1;
   maxgrad_t_pt = maxGradTemp + width+1;
-  for(;maxgrad_pt<maxgrad_pt_max; maxgrad_pt++, maxgrad_t_pt++)
-  {
+  for (; maxgrad_pt < maxgrad_pt_max; maxgrad_pt++, maxgrad_t_pt++) {
     float g1 = maxgrad_t_pt[-1];
     float g2 = maxgrad_t_pt[0];
-    if(g1 < g2) g1 = g2;
+    if (g1 < g2) g1 = g2;
     float g3 = maxgrad_t_pt[1];
-    if(g1 < g3)
-    {
+    if (g1 < g3) {
       *maxgrad_pt = g3;
-      if(g3 >= MIN_ABS_GRAD_CREATE)
+      if (g3 >= MIN_ABS_GRAD_CREATE)
         numMappablePixels++;
     }
-    else
-    {
+    else {
       *maxgrad_pt = g1;
-      if(g1 >= MIN_ABS_GRAD_CREATE)
+      if (g1 >= MIN_ABS_GRAD_CREATE)
         numMappablePixels++;
     }
   }
 
-  if(level==0)
+  if (level == 0)
     this->numMappablePixels = numMappablePixels;
 
   FrameMemory::getInstance().returnBuffer(maxGradTemp);
@@ -735,21 +746,18 @@ void Frame::buildMaxGradients(int level)
   data.maxGradientsValid[level] = true;
 }
 
-void Frame::releaseMaxGradients(int level)
-{
+void Frame::releaseMaxGradients(int level) {
   FrameMemory::getInstance().returnBuffer(data.maxGradients[level]);
-  data.maxGradients[level] = 0;
+  data.maxGradients[level] = nullptr;
 }
 
-void Frame::buildIDepthAndIDepthVar(int level)
-{
-  if (! data.hasIDepthBeenSet)
-  {
+void Frame::buildIDepthAndIDepthVar(int level) {
+  if (!data.hasIDepthBeenSet) {
     printfAssert("Frame::buildIDepthAndIDepthVar(): idepth has not been set yet!\n");
     return;
   }
-  if (level == 0)
-  {
+
+  if (level == 0) {
     printf("Frame::buildIDepthAndIDepthVar(0): Loading depth from disk is not implemented yet! No-op.\n");
     return;
   }
@@ -757,7 +765,7 @@ void Frame::buildIDepthAndIDepthVar(int level)
   require(IDEPTH, level - 1);
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-  if(data.idepthValid[level] && data.idepthVarValid[level])
+  if (data.idepthValid[level] && data.idepthVarValid[level])
     return;
 
   if(enablePrintDebugInfo && printFrameBuildDebugInfo)
@@ -845,32 +853,27 @@ void Frame::buildIDepthAndIDepthVar(int level)
   data.idepthVarValid[level] = true;
 }
 
-void Frame::releaseIDepth(int level)
-{
-  if (level == 0)
-  {
+void Frame::releaseIDepth(int level) {
+  if (level == 0) {
     printf("Frame::releaseIDepth(0): Storing depth on disk is not supported yet! No-op.\n");
     return;
   }
 
   FrameMemory::getInstance().returnBuffer(data.idepth[level]);
-  data.idepth[level] = 0;
+  data.idepth[level] = nullptr;
 }
 
-
-void Frame::releaseIDepthVar(int level)
-{
-  if (level == 0)
-  {
+void Frame::releaseIDepthVar(int level) {
+  if (level == 0) {
     printf("Frame::releaseIDepthVar(0): Storing depth variance on disk is not supported yet! No-op.\n");
     return;
   }
+
   FrameMemory::getInstance().returnBuffer(data.idepthVar[level]);
-  data.idepthVar[level] = 0;
+  data.idepthVar[level] = nullptr;
 }
 
-void Frame::printfAssert(const char* message) const
-{
+void Frame::printfAssert(const char* message) const {
   assert(!message);
   printf("%s\n", message);
 }

@@ -64,6 +64,8 @@ class FrameMemory {
 
   boost::mutex accessMutex;
   std::unordered_map<void*, unsigned int> bufferSizes;
+
+  // all the returned buffers
   std::unordered_map<unsigned int, std::vector<void*> > availableBuffers;
 
   boost::mutex activeFramesMutex;
