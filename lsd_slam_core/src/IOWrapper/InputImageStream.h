@@ -49,9 +49,7 @@ class InputImageStream {
    */
   inline NotifyBuffer<TimestampedMat>* getBuffer() {return imageBuffer;};
 
-  inline std::queue<nav_msgs::Odometry>* getOdomBuffer() {
-    return odom_queue;
-  }
+  inline NotifyBuffer<TimestampedSE3>* getSE3Buffer() {return se3Buffer;}
 
   /**
    * Gets the Camera Calibration. To avoid any dependencies, just as simple float / int's.
@@ -68,6 +66,6 @@ class InputImageStream {
   float fx_, fy_, cx_, cy_;
   int width_, height_;
 
-  std::queue<nav_msgs::Odometry>* odom_queue;
+  NotifyBuffer<TimestampedSE3>*   se3Buffer;
 };
 }

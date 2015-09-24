@@ -24,6 +24,8 @@
 #include <boost/thread.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <Eigen/Geometry>  // eigen::quaternion
+
 #include <ros/callback_queue.h>
 #include <cv_bridge/cv_bridge.h>
 
@@ -52,11 +54,15 @@ ROSImageStreamThread::ROSImageStreamThread() {
   undistorter = 0;
   lastSEQ     = 0;
 
-  haveCalib = false;
+  haveCalib   = false;
+
+  se3Buffer   = new NotifyBuffer<TimestampedSE3>(100);
+
 }
 
 ROSImageStreamThread::~ROSImageStreamThread() {
   delete imageBuffer;
+  delete se3Buffer;
 }
 
 void ROSImageStreamThread::setCalibration(std::string file) {
@@ -100,8 +106,19 @@ void ROSImageStreamThread::operator()() {
   exit(0);
 }
 
-void ROSImageStreamThread::odomCb(const nav_msgs::Odometry& odom) {
-  odom_queue->push(odom);
+void ROSImageStreamThread::odomCb(const nav_msgs::OdometryConstPtr odom) {
+  TimestampedSE3 bufferItem;
+  bufferItem.timestamp = Timestamp(odom->header.stamp.toSec());
+  bufferItem.data = SE3(
+      Eigen::Quaterniond(odom->pose.pose.orientation.w,
+                        odom->pose.pose.orientation.x,
+                        odom->pose.pose.orientation.y,
+                        odom->pose.pose.orientation.z),
+      Eigen::Vector3d(odom->pose.pose.position.x,
+                      odom->pose.pose.position.y,
+                      odom->pose.pose.position.z));
+
+  se3Buffer->pushBack(bufferItem);
 }
 
 void ROSImageStreamThread::vidCb(
@@ -139,17 +156,17 @@ void ROSImageStreamThread::infoCb(
     const sensor_msgs::CameraInfoConstPtr info) {
 
   if (!haveCalib) {
-    fx_ = info->P[0];
-    fy_ = info->P[5];
-    cx_ = info->P[2];
-    cy_ = info->P[6];
+    fx_     = info->P[0];
+    fy_     = info->P[5];
+    cx_     = info->P[2];
+    cy_     = info->P[6];
 
     if (fx_ == 0 || fy_==0) {
       printf("camera calib from P seems wrong, trying calib from K\n");
-      fx_ = info->K[0];
-      fy_ = info->K[4];
-      cx_ = info->K[2];
-      cy_ = info->K[5];
+      fx_   = info->K[0];
+      fy_   = info->K[4];
+      cx_   = info->K[2];
+      cy_   = info->K[5];
     }
 
     width_  = info->width;

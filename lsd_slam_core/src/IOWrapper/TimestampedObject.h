@@ -25,6 +25,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "IOWrapper/Timestamp.h"
+#include "util/SophusUtil.h"
 
 namespace lsd_slam {
 
@@ -35,6 +36,10 @@ struct TimestampedObject {
 };
 
 typedef TimestampedObject<cv::Mat> TimestampedMat;
+
+typedef TimestampedObject<SE3>     TimestampedSE3;
 }
+
+
 
 #endif

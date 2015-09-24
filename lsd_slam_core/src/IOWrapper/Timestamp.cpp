@@ -40,7 +40,9 @@ Timestamp::Timestamp(double seconds) {
 }
 
 double Timestamp::toSec() const {
-  if (externalStamp!=0) return externalStamp;
+  if (externalStamp != 0)
+    return externalStamp;
+
   return std::chrono::duration<double>(timePoint - startupTimePoint).count();
 }
 

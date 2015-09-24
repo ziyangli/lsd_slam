@@ -38,7 +38,7 @@ rosbuild_genmsg()
 
 # SSE flags
 rosbuild_check_for_sse()
-set(CMAKE_CXX_FLAGS "${SSE_FLAGS}")
+set(CMAKE_CXX_FLAGS "${SSE_FLAGS} -g")
 
 # SSE Sources files
 set(SOURCE_FILES

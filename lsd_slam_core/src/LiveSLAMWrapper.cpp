@@ -40,8 +40,8 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
   this->imageStream   = imageStream;
   this->outputWrapper = outputWrapper;
 
-  // ?
   imageStream->getBuffer()->setReceiver(this);
+  imageStream->getSE3Buffer()->setReceiver(this);
 
   fx     = imageStream->fx();
   fy     = imageStream->fy();
@@ -102,13 +102,17 @@ void LiveSLAMWrapper::Loop() {
     TimestampedMat image = imageStream->getBuffer()->first();
     imageStream->getBuffer()->popFront();
 
-    printf("new image");
-    std::queue<nav_msgs::Odometry>* odom_queue = imageStream->getOdomBuffer();
-    while (!odom_queue->empty()) {
-      printf("time stamp %f", odom_queue->front().header.stamp.toSec());
-      odom_queue->pop();
-      break;
-    }
+    Timestamp this_time = image.timestamp;
+
+    // while (imageStream->getSE3Buffer()->size() > 0) {
+    //   TimestampedSE3 odom = imageStream->getSE3Buffer()->first();
+    //   imageStream->getBuffer()->popFront();
+    //   printf("pop buffer \n");
+    //   if (odom.timestamp.toSec() == this_time.toSec()) {
+    //     printf("got odom \n");
+    //     break;
+    //   }
+    // }
 
     // process image
     // Util::displayImage("MyVideo", image.data);

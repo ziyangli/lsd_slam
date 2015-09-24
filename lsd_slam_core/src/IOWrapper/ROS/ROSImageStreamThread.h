@@ -59,7 +59,7 @@ class ROSImageStreamThread : public InputImageStream {
   void vidCb(const sensor_msgs::ImageConstPtr img);
   void infoCb(const sensor_msgs::CameraInfoConstPtr info);
 
-  void odomCb(const nav_msgs::Odometry& odom);
+  void odomCb(const nav_msgs::OdometryConstPtr odom);
 
  private:
 
