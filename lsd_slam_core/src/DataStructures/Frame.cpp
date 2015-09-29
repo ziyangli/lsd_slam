@@ -124,10 +124,9 @@ void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap) {
   float* id_pt          = data.idepth_reAct;
   float* idv_pt         = data.idepthVar_reAct;
   unsigned char* val_pt = data.validity_reAct;
-  float* id_pt_max      = data.idepth_reAct + (data.width[0]*data.height[0]);
 
-  for (; id_pt < id_pt_max;
-       ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap) {
+  float* id_pt_max      = data.idepth_reAct + (data.width[0]*data.height[0]);
+  for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap) {
     if (depthMap->isValid) {
       *id_pt  = depthMap->idepth;
       *idv_pt = depthMap->idepth_var;
@@ -195,29 +194,29 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
   boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-  if (data.idepth[0] == 0)
+  if (data.idepth[0] == nullptr)
     data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-  if(data.idepthVar[0] == 0)
+  if (data.idepthVar[0] == nullptr)
     data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 
-  float* pyrIDepth = data.idepth[0];
+  float* pyrIDepth    = data.idepth[0];
   float* pyrIDepthVar = data.idepthVar[0];
+
+  float sumIdepth     = 0;
+  int numIdepth       = 0;
+
   float* pyrIDepthMax = pyrIDepth + (data.width[0]*data.height[0]);
-
-  float sumIdepth=0;
-  int numIdepth=0;
-
   for (; pyrIDepth < pyrIDepthMax; ++ pyrIDepth, ++ pyrIDepthVar, ++ newDepth) //, ++ pyrRefID)
   {
     if (newDepth->isValid && newDepth->idepth_smoothed >= -0.05) {
-      *pyrIDepth = newDepth->idepth_smoothed;
+      *pyrIDepth    = newDepth->idepth_smoothed;
       *pyrIDepthVar = newDepth->idepth_var_smoothed;
 
       numIdepth++;
-      sumIdepth += newDepth->idepth_smoothed;
+      sumIdepth    += newDepth->idepth_smoothed;
     }
     else {
-      *pyrIDepth = -1;
+      *pyrIDepth    = -1;
       *pyrIDepthVar = -1;
     }
   }
@@ -225,10 +224,10 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
   meanIdepth = sumIdepth / numIdepth;
   numPoints = numIdepth;
 
-  data.idepthValid[0] = true;
-  data.idepthVarValid[0] = true;
+  data.idepthValid[0]     = true;
+  data.idepthVarValid[0]  = true;
   release(IDEPTH | IDEPTH_VAR, true, true);
-  data.hasIDepthBeenSet = true;
+  data.hasIDepthBeenSet   = true;
   depthHasBeenUpdatedFlag = true;
 }
 
@@ -287,12 +286,12 @@ void Frame::prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Ma
 
   //otherToThis = data.worldToCam * other->data.camToWorld;
   K_otherToThis_R = K * otherToThis.rotationMatrix().cast<float>() * otherToThis.scale();
-  otherToThis_t = otherToThis.translation().cast<float>();
+  otherToThis_t   = otherToThis.translation().cast<float>();
   K_otherToThis_t = K * otherToThis_t;
 
-  thisToOther_t = thisToOther.translation().cast<float>();
-  K_thisToOther_t = K * thisToOther_t;
-  thisToOther_R = thisToOther.rotationMatrix().cast<float>() * thisToOther.scale();
+  thisToOther_t      = thisToOther.translation().cast<float>();
+  K_thisToOther_t    = K * thisToOther_t;
+  thisToOther_R      = thisToOther.rotationMatrix().cast<float>() * thisToOther.scale();
   otherToThis_R_row0 = thisToOther_R.col(0);
   otherToThis_R_row1 = thisToOther_R.col(1);
   otherToThis_R_row2 = thisToOther_R.col(2);

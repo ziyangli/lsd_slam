@@ -37,9 +37,9 @@ Relocalizer::Relocalizer(int w, int h, Eigen::Matrix3f K) {
   nextRelocIDX = maxRelocIDX = 0;
   continueRunning = isRunning = false;
 
-  hasResult = false;
-  resultKF = 0;
-  resultFrameID = 0;
+  hasResult             = false;
+  resultKF              = nullptr;
+  resultFrameID         = 0;
   resultFrameToKeyframe = SE3();
 }
 
@@ -65,7 +65,7 @@ void Relocalizer::stop() {
 void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame) {
   boost::unique_lock<boost::mutex> lock(exMutex);
 
-  if(hasResult) return;
+  if (hasResult) return;
 
   this->CurrentRelocFrame = currentFrame;
   //    int doneLast = KFForReloc.size() - (maxRelocIDX-nextRelocIDX);
@@ -138,6 +138,7 @@ void Relocalizer::getResult(Frame* &out_keyframe, std::shared_ptr<Frame> &frame,
 }
 
 void Relocalizer::threadLoop(int idx) {
+  // by zli: so only one thread due to `idx`!!!
   if (!multiThreading && idx != 0) return;
 
   SE3Tracker* tracker = new SE3Tracker(w, h, K);

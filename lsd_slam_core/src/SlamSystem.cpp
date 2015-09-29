@@ -510,30 +510,28 @@ void SlamSystem::changeKeyframe(bool noCreate, bool force, float maxScore) {
 
 bool SlamSystem::updateKeyframe() {
   std::shared_ptr<Frame> reference = nullptr;
-  std::deque< std::shared_ptr<Frame> > references;
+  std::deque<std::shared_ptr<Frame> > references;
 
   unmappedTrackedFramesMutex.lock();
 
   // remove frames that have a different tracking parent.
-  while(unmappedTrackedFrames.size() > 0 &&
-        (!unmappedTrackedFrames.front()->hasTrackingParent() ||
-         unmappedTrackedFrames.front()->getTrackingParent() != currentKeyFrame.get()))
-  {
+  while (unmappedTrackedFrames.size() > 0 &&
+         (!unmappedTrackedFrames.front()->hasTrackingParent() ||
+          unmappedTrackedFrames.front()->getTrackingParent() != currentKeyFrame.get())) {
     unmappedTrackedFrames.front()->clear_refPixelWasGood();
     unmappedTrackedFrames.pop_front();
   }
 
   // clone list
-  if(unmappedTrackedFrames.size() > 0)
-  {
-    for(unsigned int i=0;i<unmappedTrackedFrames.size(); i++)
+  if (unmappedTrackedFrames.size() > 0) {
+    for (unsigned int i = 0; i < unmappedTrackedFrames.size(); i++)
       references.push_back(unmappedTrackedFrames[i]);
 
     std::shared_ptr<Frame> popped = unmappedTrackedFrames.front();
     unmappedTrackedFrames.pop_front();
     unmappedTrackedFramesMutex.unlock();
 
-    if(enablePrintDebugInfo && printThreadingInfo)
+    if (enablePrintDebugInfo && printThreadingInfo)
       printf("MAPPING %d on %d to %d (%d frames)\n", currentKeyFrame->id(), references.front()->id(), references.back()->id(), (int)references.size());
 
     map->updateKeyframe(references);
@@ -541,15 +539,12 @@ bool SlamSystem::updateKeyframe() {
     popped->clear_refPixelWasGood();
     references.clear();
   }
-  else
-  {
+  else {
     unmappedTrackedFramesMutex.unlock();
     return false;
   }
 
-
-  if(enablePrintDebugInfo && printRegularizeStatistics)
-  {
+  if (enablePrintDebugInfo && printRegularizeStatistics) {
     Eigen::Matrix<float, 20, 1> data;
     data.setZero();
     data[0] = runningStats.num_reg_created;
@@ -563,7 +558,6 @@ bool SlamSystem::updateKeyframe() {
     data[8] = runningStats.num_observe_updated;
     data[9] = runningStats.num_observe_update_attempted;
 
-
     data[10] = runningStats.num_observe_good;
     data[11] = runningStats.num_observe_inconsistent;
     data[12] = runningStats.num_observe_notfound;
@@ -573,7 +567,7 @@ bool SlamSystem::updateKeyframe() {
     outputWrapper->publishDebugInfo(data);
   }
 
-  if(outputWrapper != 0 && continuousPCOutput && currentKeyFrame != 0)
+  if (outputWrapper != 0 && continuousPCOutput && currentKeyFrame != 0)
     outputWrapper->publishKeyframe(currentKeyFrame.get());
 
   return true;
@@ -695,7 +689,7 @@ void SlamSystem::takeRelocalizeResult() {
 
     currentKeyFrameMutex.lock();
     createNewKeyFrame = false;
-    trackingIsGood = true;
+    trackingIsGood    = true;
     currentKeyFrameMutex.unlock();
   }
 }
@@ -783,8 +777,7 @@ bool SlamSystem::doMappingIteration() {
   }
 }
 
-void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int id)
-{
+void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int id) {
   printf("Doing GT initialization!\n");
 
   currentKeyFrameMutex.lock();

@@ -167,7 +167,7 @@ class Frame {
   // Tracking Reference for quick test. Always available, never taken out of memory.
   // this is used for re-localization and re-Keyframe positioning.
   boost::mutex permaRef_mutex;
-  Eigen::Vector3f* permaRef_posData;         // (x,y,z)
+  Eigen::Vector3f* permaRef_posData;         // (x, y, z)
   Eigen::Vector2f* permaRef_colorAndVarData; // (I, Var)
   int permaRefNumPts;
 

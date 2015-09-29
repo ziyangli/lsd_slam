@@ -157,7 +157,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
   affineEstimation_b = 0;
 
   LGS6 ls;
-  diverged = false;
+  diverged        = false;
   trackingWasGood = true;
 
   callOptimized(calcResidualAndBuffers,
@@ -166,7 +166,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
                  0, reference->permaRefNumPts,
                  frame, referenceToFrame, QUICK_KF_CHECK_LVL, false));
   if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL)) {
-    diverged = true;
+    diverged        = true;
     trackingWasGood = false;
     return SE3();
   }
@@ -176,12 +176,12 @@ SE3 SE3Tracker::trackFrameOnPermaref(
     affineEstimation_b = affineEstimation_b_lastIt;
   }
 
-  float lastErr = callOptimized(calcWeightsAndResidual,(referenceToFrame));
+  float lastErr = callOptimized(calcWeightsAndResidual, (referenceToFrame));
 
   float LM_lambda = settings.lambdaInitialTestTrack;
 
   for (int iteration = 0; iteration < settings.maxItsTestTrack; iteration++) {
-    callOptimized(calculateWarpUpdate,(ls));
+    callOptimized(calculateWarpUpdate, (ls));
 
     int incTry = 0;
     while (true) {
@@ -209,9 +209,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
         return SE3();
       }
 
-      float error = callOptimized(calcWeightsAndResidual,
-                                  (new_referenceToFrame));
-
+      float error = callOptimized(calcWeightsAndResidual, (new_referenceToFrame));
 
       // accept inc?
       if (error < lastErr) {
@@ -250,9 +248,9 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
   lastResidual = lastErr;
 
-  trackingWasGood = !diverged
-                    && lastGoodCount / (frame->width(QUICK_KF_CHECK_LVL)*frame->height(QUICK_KF_CHECK_LVL)) > MIN_GOODPERALL_PIXEL
-                    && lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
+  trackingWasGood = !diverged &&
+                    lastGoodCount / (frame->width(QUICK_KF_CHECK_LVL)*frame->height(QUICK_KF_CHECK_LVL)) > MIN_GOODPERALL_PIXEL &&
+                    lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
 
   return toSophus(referenceToFrame);
 }
