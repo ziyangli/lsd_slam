@@ -125,7 +125,6 @@ class SlamSystem {
 
   // during re-localization used
   std::vector<Frame*> KFForReloc;
-  int nextRelocIdx;
   std::shared_ptr<Frame> latestFrameTriedForReloc;
 
   // ============= EXCLUSIVELY FIND-CONSTRAINT THREAD (+ init) =============

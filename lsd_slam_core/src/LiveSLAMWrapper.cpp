@@ -37,7 +37,6 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
   this->imageStream   = imageStream;
   this->outputWrapper = outputWrapper;
 
-  // ?
   imageStream->getBuffer()->setReceiver(this);
 
   fx     = imageStream->fx();
@@ -79,9 +78,9 @@ void LiveSLAMWrapper::Loop() {
 
   while (true) {
 
-    // wait till image is ready
     boost::unique_lock<boost::recursive_mutex> waitLock(imageStream->getBuffer()->getMutex());
 
+    // wait for an image
     while (!fullResetRequested &&
            !(imageStream->getBuffer()->size() > 0)) {
       notifyCondition.wait(waitLock);
