@@ -324,30 +324,24 @@ int KeyFrameGraph::optimize(int num_iterations)
 
 }
 
-
-
-void KeyFrameGraph::calculateGraphDistancesToFrame(Frame* startFrame, std::unordered_map< Frame*, int >* distanceMap)
-{
+void KeyFrameGraph::calculateGraphDistancesToFrame(Frame* startFrame, std::unordered_map<Frame*, int>* distanceMap) {
   distanceMap->insert(std::make_pair(startFrame, 0));
 
-  std::multimap< int, Frame* > priorityQueue;
+  std::multimap<int, Frame*> priorityQueue;
   priorityQueue.insert(std::make_pair(0, startFrame));
-  while (! priorityQueue.empty())
-  {
-    auto it = priorityQueue.begin();
-    int length = it->first;
+  while (!priorityQueue.empty()) {
+    auto it      = priorityQueue.begin();
+    int length   = it->first;
     Frame* frame = it->second;
     priorityQueue.erase(it);
 
     auto mapEntry = distanceMap->find(frame);
 
-    if (mapEntry != distanceMap->end() && length > mapEntry->second)
-    {
+    if (mapEntry != distanceMap->end() && length > mapEntry->second) {
       continue;
     }
 
-    for (Frame* neighbor : frame->neighbors)
-    {
+    for (Frame* neighbor : frame->neighbors) {
       auto neighborMapEntry = distanceMap->find(neighbor);
 
       if (neighborMapEntry != distanceMap->end() && length + 1 >= neighborMapEntry->second)

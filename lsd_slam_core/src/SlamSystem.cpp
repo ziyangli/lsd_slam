@@ -388,7 +388,7 @@ void SlamSystem::finishCurrentKeyframe() {
       currentKeyFrame->idxInKeyframes = keyFrameGraph->keyframesAll.size();
       keyFrameGraph->keyframesAll.push_back(currentKeyFrame.get());
       keyFrameGraph->totalPoints += currentKeyFrame->numPoints;
-      keyFrameGraph->totalVertices ++;
+      keyFrameGraph->totalVertices++;
       keyFrameGraph->keyframesAllMutex.unlock();
 
       newKeyFrameMutex.lock();
@@ -1022,7 +1022,7 @@ float SlamSystem::tryTrackSim3(
     int lvlStart, int lvlEnd,
     bool useSSE,
     Sim3 &AtoB, Sim3 &BtoA,
-    KFConstraintStruct* e1, KFConstraintStruct* e2 ) {
+    KFConstraintStruct* e1, KFConstraintStruct* e2) {
 
   BtoA = constraintTracker->trackFrameSim3(A, B->keyframe, BtoA, lvlStart, lvlEnd);
   Matrix7x7 BtoAInfo       = constraintTracker->lastSim3Hessian;
@@ -1035,30 +1035,22 @@ float SlamSystem::tryTrackSim3(
       BtoA.scale() > 1 / Sophus::SophusConstants<sophusType>::epsilon() ||
       BtoA.scale() < Sophus::SophusConstants<sophusType>::epsilon() ||
       BtoAInfo(0,0) == 0 ||
-      BtoAInfo(6,6) == 0)
-  {
+      BtoAInfo(6,6) == 0) {
     return 1e20;
   }
 
-
-  AtoB = constraintTracker->trackFrameSim3(
-      B,
-      A->keyframe,
-      AtoB,
-      lvlStart,lvlEnd);
-  Matrix7x7 AtoBInfo = constraintTracker->lastSim3Hessian;
-  float AtoB_meanResidual = constraintTracker->lastResidual;
+  AtoB = constraintTracker->trackFrameSim3(B, A->keyframe, AtoB, lvlStart,lvlEnd);
+  Matrix7x7 AtoBInfo       = constraintTracker->lastSim3Hessian;
+  float AtoB_meanResidual  = constraintTracker->lastResidual;
   float AtoB_meanDResidual = constraintTracker->lastDepthResidual;
   float AtoB_meanPResidual = constraintTracker->lastPhotometricResidual;
-  float AtoB_usage = constraintTracker->pointUsage;
-
+  float AtoB_usage         = constraintTracker->pointUsage;
 
   if (constraintTracker->diverged ||
       AtoB.scale() > 1 / Sophus::SophusConstants<sophusType>::epsilon() ||
       AtoB.scale() < Sophus::SophusConstants<sophusType>::epsilon() ||
       AtoBInfo(0,0) == 0 ||
-      AtoBInfo(6,6) == 0)
-  {
+      AtoBInfo(6,6) == 0) {
     return 1e20;
   }
 
@@ -1067,29 +1059,26 @@ float SlamSystem::tryTrackSim3(
   Matrix7x7 diffHesse = (AtoBInfo.inverse() + datimesb_db * BtoAInfo.inverse() * datimesb_db.transpose()).inverse();
   Vector7 diff = (AtoB * BtoA).log().cast<float>();
 
-
   float reciprocalConsistency = (diffHesse * diff).dot(diff);
 
-
-  if(e1 != 0 && e2 != 0)
-  {
-    e1->firstFrame = A->keyframe;
-    e1->secondFrame = B->keyframe;
+  if (e1 != 0 && e2 != 0) {
+    e1->firstFrame    = A->keyframe;
+    e1->secondFrame   = B->keyframe;
     e1->secondToFirst = BtoA;
-    e1->information = BtoAInfo.cast<double>();
-    e1->meanResidual = BtoA_meanResidual;
+    e1->information   = BtoAInfo.cast<double>();
+    e1->meanResidual  = BtoA_meanResidual;
     e1->meanResidualD = BtoA_meanDResidual;
     e1->meanResidualP = BtoA_meanPResidual;
-    e1->usage = BtoA_usage;
+    e1->usage         = BtoA_usage;
 
-    e2->firstFrame = B->keyframe;
-    e2->secondFrame = A->keyframe;
+    e2->firstFrame    = B->keyframe;
+    e2->secondFrame   = A->keyframe;
     e2->secondToFirst = AtoB;
-    e2->information = AtoBInfo.cast<double>();
-    e2->meanResidual = AtoB_meanResidual;
+    e2->information   = AtoBInfo.cast<double>();
+    e2->meanResidual  = AtoB_meanResidual;
     e2->meanResidualD = AtoB_meanDResidual;
     e2->meanResidualP = AtoB_meanPResidual;
-    e2->usage = AtoB_usage;
+    e2->usage         = AtoB_usage;
 
     e1->reciprocalConsistency = e2->reciprocalConsistency = reciprocalConsistency;
   }
@@ -1097,88 +1086,82 @@ float SlamSystem::tryTrackSim3(
   return reciprocalConsistency;
 }
 
-
 void SlamSystem::testConstraint(
     Frame* candidate,
     KFConstraintStruct* &e1_out, KFConstraintStruct* &e2_out,
     Sim3 candidateToFrame_initialEstimate,
-    float strictness)
-{
+    float strictness) {
+
   candidateTrackingReference->importFrame(candidate);
 
-  Sim3 FtoC = candidateToFrame_initialEstimate.inverse(), CtoF = candidateToFrame_initialEstimate;
+  Sim3 CtoF = candidateToFrame_initialEstimate;
+  Sim3 FtoC = candidateToFrame_initialEstimate.inverse();
+
   Matrix7x7 FtoCInfo, CtoFInfo;
 
   float err_level3 = tryTrackSim3(
       newKFTrackingReference, candidateTrackingReference,   // A = frame; b = candidate
-      SIM3TRACKING_MAX_LEVEL-1, 3,
+      SIM3TRACKING_MAX_LEVEL - 1, 3,
       USESSE,
       FtoC, CtoF);
 
-  if(err_level3 > 3000*strictness)
-  {
-    if(enablePrintDebugInfo && printConstraintSearchInfo)
+  if (err_level3 > 3000*strictness) {
+    if (enablePrintDebugInfo && printConstraintSearchInfo)
       printf("FAILE %d -> %d (lvl %d): errs (%.1f / - / -).",
-             newKFTrackingReference->frameID, candidateTrackingReference->frameID,
-             3,
-             sqrtf(err_level3));
+             newKFTrackingReference->frameID,
+             candidateTrackingReference->frameID,
+             3, sqrtf(err_level3));
 
     e1_out = e2_out = 0;
 
-    newKFTrackingReference->keyframe->trackingFailed.insert(std::pair<Frame*,Sim3>(candidate, candidateToFrame_initialEstimate));
+    newKFTrackingReference->keyframe->trackingFailed.insert(std::pair<Frame*, Sim3>(candidate, candidateToFrame_initialEstimate));
     return;
   }
 
   float err_level2 = tryTrackSim3(
       newKFTrackingReference, candidateTrackingReference,   // A = frame; b = candidate
-      2, 2,
-      USESSE,
-      FtoC, CtoF);
+      2, 2, USESSE, FtoC, CtoF);
 
-  if(err_level2 > 4000*strictness)
-  {
-    if(enablePrintDebugInfo && printConstraintSearchInfo)
+  if (err_level2 > 4000*strictness) {
+    if (enablePrintDebugInfo && printConstraintSearchInfo)
       printf("FAILE %d -> %d (lvl %d): errs (%.1f / %.1f / -).",
-             newKFTrackingReference->frameID, candidateTrackingReference->frameID,
-             2,
-             sqrtf(err_level3), sqrtf(err_level2));
+             newKFTrackingReference->frameID,
+             candidateTrackingReference->frameID,
+             2, sqrtf(err_level3), sqrtf(err_level2));
 
     e1_out = e2_out = 0;
-    newKFTrackingReference->keyframe->trackingFailed.insert(std::pair<Frame*,Sim3>(candidate, candidateToFrame_initialEstimate));
+    newKFTrackingReference->keyframe->trackingFailed.insert(std::pair<Frame*, Sim3>(candidate, candidateToFrame_initialEstimate));
     return;
   }
 
   e1_out = new KFConstraintStruct();
   e2_out = new KFConstraintStruct();
 
-
   float err_level1 = tryTrackSim3(
-      newKFTrackingReference, candidateTrackingReference,   // A = frame; b = candidate
-      1, 1,
-      USESSE,
-      FtoC, CtoF, e1_out, e2_out);
+      newKFTrackingReference,
+      candidateTrackingReference,   // A = frame; b = candidate
+      1, 1, USESSE, FtoC, CtoF, e1_out, e2_out);
 
-  if(err_level1 > 6000*strictness)
-  {
-    if(enablePrintDebugInfo && printConstraintSearchInfo)
+  if (err_level1 > 6000*strictness) {
+    if (enablePrintDebugInfo && printConstraintSearchInfo)
       printf("FAILE %d -> %d (lvl %d): errs (%.1f / %.1f / %.1f).",
-             newKFTrackingReference->frameID, candidateTrackingReference->frameID,
-             1,
-             sqrtf(err_level3), sqrtf(err_level2), sqrtf(err_level1));
+             newKFTrackingReference->frameID,
+             candidateTrackingReference->frameID,
+             1, sqrtf(err_level3),
+             sqrtf(err_level2), sqrtf(err_level1));
 
     delete e1_out;
     delete e2_out;
     e1_out = e2_out = 0;
-    newKFTrackingReference->keyframe->trackingFailed.insert(std::pair<Frame*,Sim3>(candidate, candidateToFrame_initialEstimate));
+    newKFTrackingReference->keyframe->trackingFailed.insert(std::pair<Frame*, Sim3>(candidate, candidateToFrame_initialEstimate));
     return;
   }
 
-
-  if(enablePrintDebugInfo && printConstraintSearchInfo)
+  if (enablePrintDebugInfo && printConstraintSearchInfo)
     printf("ADDED %d -> %d: errs (%.1f / %.1f / %.1f).",
-           newKFTrackingReference->frameID, candidateTrackingReference->frameID,
+           newKFTrackingReference->frameID,
+           candidateTrackingReference->frameID,
            sqrtf(err_level3), sqrtf(err_level2), sqrtf(err_level1));
-
 
   const float kernelDelta = 5 * sqrt(6000*loopclosureStrictness);
   e1_out->robustKernel = new g2o::RobustKernelHuber();
@@ -1188,6 +1171,7 @@ void SlamSystem::testConstraint(
 }
 
 int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH) {
+
   if (!newKeyFrame->hasTrackingParent()) {
     newConstraintMutex.lock();
     keyFrameGraph->addKeyFrame(newKeyFrame);
@@ -1204,10 +1188,11 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
 
   // =============== get all potential candidates and their initial relative pose. =================
   std::vector<KFConstraintStruct*, Eigen::aligned_allocator<KFConstraintStruct*> > constraints;
-  Frame* fabMapResult = 0;
-  std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>,
-                     Eigen::aligned_allocator< Frame* > > candidates = trackableKeyFrameSearch->findCandidates(newKeyFrame, fabMapResult, useFABMAP, closeCandidatesTH);
-  std::map< Frame*, Sim3, std::less<Frame*>, Eigen::aligned_allocator<std::pair<Frame*, Sim3> > > candidateToFrame_initialEstimateMap;
+  Frame* fabMapResult = nullptr;
+
+  std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>, Eigen::aligned_allocator<Frame* > > candidates = trackableKeyFrameSearch->findCandidates(newKeyFrame, fabMapResult, useFABMAP, closeCandidatesTH);
+
+  std::map<Frame*, Sim3, std::less<Frame*>, Eigen::aligned_allocator<std::pair<Frame*, Sim3> > > candidateToFrame_initialEstimateMap;
 
   // erase the ones that are already neighbours.
   for (std::unordered_set<Frame*>::iterator c = candidates.begin(); c != candidates.end();) {
@@ -1232,12 +1217,11 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     keyFrameGraph->calculateGraphDistancesToFrame(newKeyFrame->getTrackingParent(), &distancesToNewKeyFrame);
   poseConsistencyMutex.unlock_shared();
 
-  // =============== distinguish between close and "far" candidates in Graph =================
+  // distinguish between close and "far" candidates in Graph
   // Do a first check on trackability of close candidates.
-  std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>,
-                     Eigen::aligned_allocator< Frame* > > closeCandidates;
+  std::unordered_set<Frame*, std::hash<Frame*>, std::equal_to<Frame*>, Eigen::aligned_allocator<Frame*> > closeCandidates;
   std::vector<Frame*, Eigen::aligned_allocator<Frame*> > farCandidates;
-  Frame* parent = newKeyFrame->hasTrackingParent() ? newKeyFrame->getTrackingParent() : 0;
+  Frame* parent = newKeyFrame->hasTrackingParent() ? newKeyFrame->getTrackingParent() : nullptr;
 
   int closeFailed       = 0;
   int closeInconsistent = 0;
@@ -1280,9 +1264,6 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     closeCandidates.insert(candidate);
   }
 
-  int farFailed       = 0;
-  int farInconsistent = 0;
-
   for (Frame* candidate : candidates) {
     if (candidate->id() == newKeyFrame->id())
       continue;
@@ -1293,12 +1274,10 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
       continue;
     if (candidate->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
       continue;
-
     if (candidate == fabMapResult) {
       farCandidates.push_back(candidate);
       continue;
     }
-
     if (distancesToNewKeyFrame.at(candidate) < 4)
       continue;
 
@@ -1306,10 +1285,14 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   }
 
   int closeAll = closeCandidates.size();
-  int farAll = farCandidates.size();
+  int farAll   = farCandidates.size();
+
+  int farFailed       = 0;
+  int farInconsistent = 0;
 
   // erase the ones that we tried already before (close)
   for (std::unordered_set<Frame*>::iterator c = closeCandidates.begin(); c != closeCandidates.end();) {
+
     if (newKeyFrame->trackingFailed.find(*c) == newKeyFrame->trackingFailed.end()) {
       ++c;
       continue;
@@ -1321,7 +1304,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
     Sim3 f2c = candidateToFrame_initialEstimateMap[*c].inverse();
     for (auto it = range.first; it != range.second; ++it) {
       if ((f2c * it->second).log().norm() < 0.1) {
-        skip=true;
+        skip = true;
         break;
       }
     }
@@ -1370,7 +1353,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   // =============== limit number of close candidates ===============
   // while too many, remove the one with the highest connectivity.
   while ((int)closeCandidates.size() > maxLoopClosureCandidates) {
-    Frame* worst = 0;
+    Frame* worst        = nullptr;
     int worstNeighbours = 0;
 
     for (Frame* f : closeCandidates) {
@@ -1390,7 +1373,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
 
   // =============== limit number of far candidates ===============
   // delete randomly
-  int maxNumFarCandidates = (maxLoopClosureCandidates +1) / 2;
+  int maxNumFarCandidates = (maxLoopClosureCandidates + 1) / 2;
   if (maxNumFarCandidates < 5) maxNumFarCandidates = 5;
   while ((int)farCandidates.size() > maxNumFarCandidates) {
     int toDelete = rand() % farCandidates.size();

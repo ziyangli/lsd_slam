@@ -156,7 +156,7 @@ void Frame::setPermaRef(TrackingReference* reference) {
 
   permaRefNumPts = reference->numData[QUICK_KF_CHECK_LVL];
   permaRef_colorAndVarData = new Eigen::Vector2f[permaRefNumPts];
-  permaRef_posData = new Eigen::Vector3f[permaRefNumPts];
+  permaRef_posData         = new Eigen::Vector3f[permaRefNumPts];
 
   memcpy(permaRef_colorAndVarData,
          reference->colorAndVarData[QUICK_KF_CHECK_LVL],

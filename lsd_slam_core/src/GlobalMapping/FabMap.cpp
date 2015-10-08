@@ -121,10 +121,7 @@ FabMap::~FabMap()
   }
 }
 
-
-
-void FabMap::compareAndAdd(Frame* keyframe, int* out_newID, int* out_loopID)
-{
+void FabMap::compareAndAdd(Frame* keyframe, int* out_newID, int* out_loopID) {
   // Convert keyframe image data to 3-channel OpenCV Mat (theoretically unneccessary)
   cv::Mat frame;
   cv::Mat keyFrameImage(keyframe->height(), keyframe->width(), CV_32F, const_cast<float*>(keyframe->image()));
@@ -135,9 +132,8 @@ void FabMap::compareAndAdd(Frame* keyframe, int* out_newID, int* out_loopID)
   cv::Mat bow;
   std::vector<cv::KeyPoint> kpts;
   detector->detect(frame, kpts);
-  if (kpts.empty())
-  {
-    *out_newID = -1;
+  if (kpts.empty()) {
+    *out_newID  = -1;
     *out_loopID = -1;
     return;
   }
@@ -151,40 +147,36 @@ void FabMap::compareAndAdd(Frame* keyframe, int* out_newID, int* out_loopID)
   *out_newID = nextImageID;
   ++nextImageID;
 
-  if (printConfusionMatrix)
-  {
+  if (printConfusionMatrix) {
     cv::Mat resizedMat(nextImageID, nextImageID, confusionMat.type(), cv::Scalar(0));
     if (confusionMat.rows > 0)
       confusionMat.copyTo(resizedMat(cv::Rect(cv::Point(0, 0), confusionMat.size())));
     confusionMat = resizedMat;
 
-    for(auto l = matches.begin(); l != matches.end(); ++ l)
-    {
+    for (auto l = matches.begin(); l != matches.end(); ++ l) {
       int col = (l->imgIdx < 0) ? (nextImageID-1) : l->imgIdx;
       confusionMat.at<float>(nextImageID-1, col) = l->match;
     }
   }
 
   const float minLoopProbability = 0.8f;
-  float accumulatedProbability = 0;
-  const bool debugProbabilites = false;
+  float accumulatedProbability   = 0;
+  const bool debugProbabilites   = false;
+
   if (debugProbabilites)
     printf("FabMap probabilities:");
-  for(auto l = matches.begin(); l != matches.end(); ++ l)
-  {
+
+  for (auto l = matches.begin(); l != matches.end(); ++ l) {
     if (debugProbabilites)
       printf(" (%i: %f)", l->imgIdx, l->match);
 
-    if(l->imgIdx < 0)
-    {
+    if (l->imgIdx < 0) {
       // Probability for new place
       accumulatedProbability += l->match;
     }
-    else
-    {
+    else {
       // Probability for existing place
-      if (l->match >= minLoopProbability)
-      {
+      if (l->match >= minLoopProbability) {
         *out_loopID = l->imgIdx;
         if (debugProbabilites)
           printf("\n");
@@ -193,9 +185,10 @@ void FabMap::compareAndAdd(Frame* keyframe, int* out_newID, int* out_loopID)
       accumulatedProbability += l->match;
     }
 
-    if (! debugProbabilites && accumulatedProbability > 1 - minLoopProbability)
+    if (!debugProbabilites && accumulatedProbability > 1 - minLoopProbability)
       break; // not possible anymore to find a frame with high enough probability
   }
+
   if (debugProbabilites)
     printf("\n");
 
