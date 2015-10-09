@@ -49,13 +49,12 @@
 
 using namespace lsd_slam;
 
-
 SlamSystem::SlamSystem(
     int w, int h, Eigen::Matrix3f K, bool enableSLAM) :
     SLAMEnabled(enableSLAM),
     relocalizer(w, h, K) {
 
-  if (w%16 != 0 || h%16!=0) {
+  if (w%16 != 0 || h%16 != 0) {
     printf("image dimensions must be multiples of 16! Please crop your images / video accordingly.\n");
     assert(false);
   }
@@ -68,14 +67,14 @@ SlamSystem::SlamSystem(
   createNewKeyFrame              = false;
   currentKeyFrame                = nullptr;
   trackingReferenceFrameSharedPT = nullptr;
-  keyFrameGraph                  = new KeyFrameGraph();
 
+  tracker                        = new SE3Tracker(w, h, K);
   map                            = new DepthMap(w, h, K);
 
   newConstraintAdded             = false;
   haveUnmergedOptimizationOffset = false;
 
-  tracker                        = new SE3Tracker(w, h, K);
+  keyFrameGraph                  = new KeyFrameGraph();
 
   // Do not use more than 4 levels for odometry tracking
   for (int level = 4; level < PYRAMID_LEVELS; ++level)
@@ -113,9 +112,18 @@ SlamSystem::SlamSystem(
   }
 
   // debug info
-  msTrackFrame = msOptimizationIteration = msFindConstraintsItaration = msFindReferences = 0;
-  nTrackFrame = nOptimizationIteration = nFindConstraintsItaration = nFindReferences = 0;
-  nAvgTrackFrame = nAvgOptimizationIteration = nAvgFindConstraintsItaration = nAvgFindReferences = 0;
+  msTrackFrame              = 0;
+  msFindReferences          = 0;
+  msOptimizationIteration   = msFindConstraintsItaration   = 0;
+
+  nTrackFrame               = 0;
+  nFindReferences           = 0;
+  nOptimizationIteration    = nFindConstraintsItaration    = 0;
+
+  nAvgTrackFrame            = 0;
+  nAvgFindReferences        = 0;
+  nAvgOptimizationIteration = nAvgFindConstraintsItaration = 0;
+
   gettimeofday(&lastHzUpdate, NULL);
 
 }
@@ -222,7 +230,7 @@ void SlamSystem::finalize() {
   printf("Finalizing Graph... finding final constraints!!\n");
 
   lastNumConstraintsAddedOnFullRetrack = 1;
-  while(lastNumConstraintsAddedOnFullRetrack != 0) {
+  while (lastNumConstraintsAddedOnFullRetrack != 0) {
     doFullReConstraintTrack = true;
     usleep(200000);
   }
@@ -803,6 +811,7 @@ void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int i
 }
 
 void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
+
   printf("Doing Random initialization!\n");
 
   if (!doMapping)
@@ -813,6 +822,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
   currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image));
 
   map->initializeRandomly(currentKeyFrame.get());
+
   keyFrameGraph->addFrame(currentKeyFrame.get());
 
   currentKeyFrameMutex.unlock();

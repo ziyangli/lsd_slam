@@ -196,7 +196,7 @@ class SlamSystem {
   // locked exclusively during the pose-update by Mapping.
   boost::shared_mutex poseConsistencyMutex;
 
-  bool depthMapScreenshotFlag;
+  bool        depthMapScreenshotFlag;
   std::string depthMapScreenshotFilename;
 
   /** Merges the current keyframe optimization offset to all working entities. */

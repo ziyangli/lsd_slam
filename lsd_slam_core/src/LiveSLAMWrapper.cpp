@@ -56,6 +56,7 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper*
   outFile = nullptr;
 
   // make Odometry
+  printf("%s\n", doSlam ? "slam enabled" : "no slam");
   monoOdometry = new SlamSystem(width, height, K_sophus, doSlam);
 
   monoOdometry->setVisualization(outputWrapper);
@@ -124,7 +125,7 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime) {
     monoOdometry->randomInit(grayImg.data, imgTime.toSec(), 1);
     isInitialized = true;
   }
-  else if(isInitialized && monoOdometry != nullptr) {
+  else if (isInitialized && monoOdometry != nullptr) {
     monoOdometry->trackFrame(grayImg.data,
                              imageSeqNumber,
                              false,

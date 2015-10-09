@@ -303,20 +303,20 @@ void Frame::prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Ma
 }
 
 void Frame::require(int dataFlags, int level) {
-  if ((dataFlags & IMAGE) && ! data.imageValid[level]) {
+  if ((dataFlags & IMAGE) && !data.imageValid[level]) {
     buildImage(level);
   }
 
-  if ((dataFlags & GRADIENTS) && ! data.gradientsValid[level]) {
+  if ((dataFlags & GRADIENTS) && !data.gradientsValid[level]) {
     buildGradients(level);
   }
 
-  if ((dataFlags & MAX_GRADIENTS) && ! data.maxGradientsValid[level]) {
+  if ((dataFlags & MAX_GRADIENTS) && !data.maxGradientsValid[level]) {
     buildMaxGradients(level);
   }
 
   if (((dataFlags & IDEPTH) && ! data.idepthValid[level])
-      || ((dataFlags & IDEPTH_VAR) && ! data.idepthVarValid[level])) {
+      || ((dataFlags & IDEPTH_VAR) && !data.idepthVarValid[level])) {
     buildIDepthAndIDepthVar(level);
   }
 }
@@ -472,65 +472,63 @@ void Frame::initialize(
   isActive                 = false;
 }
 
-void Frame::setDepth_Allocate()
-{
+void Frame::setDepth_Allocate() {
   return;
 }
 
-void Frame::buildImage(int level)
-{
-  if (level == 0)
-  {
+void Frame::buildImage(int level) {
+  if (level == 0) {
     printf("Frame::buildImage(0): Loading image from disk is not implemented yet! No-op.\n");
     return;
   }
 
+  // recursive require image from level 1 to 4
   require(IMAGE, level - 1);
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-  if(data.imageValid[level])
+  if (data.imageValid[level])
     return;
 
-  if(enablePrintDebugInfo && printFrameBuildDebugInfo)
+  if (enablePrintDebugInfo && printFrameBuildDebugInfo)
     printf("CREATE Image lvl %d for frame %d\n", level, id());
 
-  int width = data.width[level - 1];
-  int height = data.height[level - 1];
+  // info. of previous level
+  int width           = data.width[level - 1];
+  int height          = data.height[level - 1];
   const float* source = data.image[level - 1];
 
-  if (data.image[level] == 0)
+  // this level
+  if (data.image[level] == nullptr)
     data.image[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
+
   float* dest = data.image[level];
 
 #if defined(ENABLE_SSE)
   // I assume all all subsampled width's are a multiple of 8.
   // if this is not the case, this still works except for the last * pixel, which will produce a segfault.
   // in that case, reduce this loop and calculate the last 0-3 dest pixels by hand....
-  if (width % 8 == 0)
-  {
-    __m128 p025 = _mm_setr_ps(0.25f,0.25f,0.25f,0.25f);
+  if (width % 8 == 0) {
+    __m128 p025 = _mm_setr_ps(0.25f, 0.25f, 0.25f, 0.25f);
 
-    const float* maxY = source+width*height;
-    for(const float* y = source; y < maxY; y+=width*2)
-    {
+    const float* maxY = source + width*height;
+    for (const float* y = source; y < maxY; y += width*2) {
       const float* maxX = y+width;
-      for(const float* x=y; x < maxX; x += 8)
-      {
+      for (const float* x = y; x < maxX; x += 8) {  // why const?
         // i am calculating four dest pixels at a time.
 
-        __m128 top_left = _mm_load_ps((float*)x);
-        __m128 bot_left = _mm_load_ps((float*)x+width);
-        __m128 left = _mm_add_ps(top_left,bot_left);
+        __m128 top_left  = _mm_load_ps((float*)x);
+        __m128 bot_left  = _mm_load_ps((float*)x+width);
+        __m128 left      = _mm_add_ps(top_left, bot_left);
 
         __m128 top_right = _mm_load_ps((float*)x+4);
         __m128 bot_right = _mm_load_ps((float*)x+width+4);
-        __m128 right = _mm_add_ps(top_right,bot_right);
+        __m128 right     = _mm_add_ps(top_right, bot_right);
 
-        __m128 sumA = _mm_shuffle_ps(left,right, _MM_SHUFFLE(2,0,2,0));
-        __m128 sumB = _mm_shuffle_ps(left,right, _MM_SHUFFLE(3,1,3,1));
+        __m128 sumA      = _mm_shuffle_ps(left, right, _MM_SHUFFLE(2, 0, 2, 0));
+        __m128 sumB      = _mm_shuffle_ps(left, right, _MM_SHUFFLE(3, 1, 3, 1));
 
-        __m128 sum = _mm_add_ps(sumA,sumB);
-        sum = _mm_mul_ps(sum,p025);
+        __m128 sum       = _mm_add_ps(sumA, sumB);
+        sum              = _mm_mul_ps(sum,  p025);
 
         _mm_store_ps(dest, sum);
         dest += 4;
@@ -544,10 +542,9 @@ void Frame::buildImage(int level)
   // I assume all all subsampled width's are a multiple of 8.
   // if this is not the case, this still works except for the last * pixel, which will produce a segfault.
   // in that case, reduce this loop and calculate the last 0-3 dest pixels by hand....
-  if (width % 8 == 0)
-  {
-    static const float p025[] = {0.25, 0.25, 0.25, 0.25};
-    int width_iteration_count = width / 8;
+  if (width % 8 == 0) {
+    static const float p025[]  = {0.25, 0.25, 0.25, 0.25};
+    int width_iteration_count  = width  / 8;
     int height_iteration_count = height / 2;
     const float* cur_px = source;
     const float* next_row_px = source + width;
@@ -602,20 +599,16 @@ void Frame::buildImage(int level)
 
   int wh = width*height;
   const float* s;
-  for(int y=0;y<wh;y+=width*2)
-  {
-    for(int x=0;x<width;x+=2)
-    {
+  for (int y = 0; y < wh; y += width*2) {
+    for (int x = 0; x < width; x += 2) {
       s = source + x + y;
-      *dest = (s[0] +
-               s[1] +
-               s[width] +
-               s[1+width]) * 0.25f;
+      *dest = (s[0] + s[1] + s[width] + s[1+width]) * 0.25f;
       dest++;
     }
   }
 
   data.imageValid[level] = true;
+  return;
 }
 
 void Frame::releaseImage(int level) {
@@ -634,24 +627,26 @@ void Frame::buildGradients(int level) {
   if (data.gradientsValid[level])
     return;
 
-  if(enablePrintDebugInfo && printFrameBuildDebugInfo)
+  if (enablePrintDebugInfo && printFrameBuildDebugInfo)
     printf("CREATE Gradients lvl %d for frame %d\n", level, id());
 
-  int width = data.width[level];
+  int width  = data.width[level];
   int height = data.height[level];
-  if(data.gradients[level] == 0)
+  if (data.gradients[level] == nullptr)
     data.gradients[level] = (Eigen::Vector4f*)FrameMemory::getInstance().getBuffer(sizeof(Eigen::Vector4f) * width * height);
-  const float* img_pt = data.image[level] + width;
-  const float* img_pt_max = data.image[level] + width*(height-1);
-  Eigen::Vector4f* gradxyii_pt = data.gradients[level] + width;
 
-  // in each iteration i need -1,0,p1,mw,pw
+  // skip 1st and last line
+  // [bug] zli: how about left and right boarder?
+  const float* img_pt          = data.image[level] + width + 1;
+  const float* img_pt_max      = data.image[level] + width*(height-1) - 1;
+  Eigen::Vector4f* gradxyii_pt = data.gradients[level] + width + 1;
+
+  // in each iteration i need -1, 0, p1, mw, pw
   float val_m1 = *(img_pt-1);
   float val_00 = *img_pt;
   float val_p1;
 
-  for(; img_pt < img_pt_max; img_pt++, gradxyii_pt++)
-  {
+  for (; img_pt < img_pt_max; img_pt++, gradxyii_pt++) {
     val_p1 = *(img_pt+1);
 
     *((float*)gradxyii_pt) = 0.5f*(val_p1 - val_m1);
