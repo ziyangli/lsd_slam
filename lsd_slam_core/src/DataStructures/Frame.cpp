@@ -636,10 +636,10 @@ void Frame::buildGradients(int level) {
     data.gradients[level] = (Eigen::Vector4f*)FrameMemory::getInstance().getBuffer(sizeof(Eigen::Vector4f) * width * height);
 
   // skip 1st and last line
-  // [bug] zli: how about left and right boarder?
-  const float* img_pt          = data.image[level] + width + 1;
-  const float* img_pt_max      = data.image[level] + width*(height-1) - 1;
-  Eigen::Vector4f* gradxyii_pt = data.gradients[level] + width + 1;
+  // [bug] zli: how about left and right boarder? only vertical grad. is valid
+  const float* img_pt          = data.image[level] + width;
+  const float* img_pt_max      = data.image[level] + width*(height-1);
+  Eigen::Vector4f* gradxyii_pt = data.gradients[level] + width;
 
   // in each iteration i need -1, 0, p1, mw, pw
   float val_m1 = *(img_pt-1);
@@ -669,57 +669,64 @@ void Frame::buildMaxGradients(int level) {
   require(GRADIENTS, level);
   boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-  if(data.maxGradientsValid[level]) return;
+  if (data.maxGradientsValid[level])
+    return;
 
-  if(enablePrintDebugInfo && printFrameBuildDebugInfo)
+  if (enablePrintDebugInfo && printFrameBuildDebugInfo)
     printf("CREATE AbsGrad lvl %d for frame %d\n", level, id());
 
-  int width = data.width[level];
+  int width  = data.width[level];
   int height = data.height[level];
-  if (data.maxGradients[level] == 0)
+  if (data.maxGradients[level] == nullptr)
     data.maxGradients[level] = FrameMemory::getInstance().getFloatBuffer(width * height);
-
-  float* maxGradTemp = FrameMemory::getInstance().getFloatBuffer(width * height);
-
 
   // 1. write abs gradients in real data.
   Eigen::Vector4f* gradxyii_pt = data.gradients[level] + width;
-  float* maxgrad_pt = data.maxGradients[level] + width;
+  float* maxgrad_pt     = data.maxGradients[level] + width;
   float* maxgrad_pt_max = data.maxGradients[level] + width*(height-1);
 
-  for(; maxgrad_pt < maxgrad_pt_max; maxgrad_pt++, gradxyii_pt++)
-  {
+  for (; maxgrad_pt < maxgrad_pt_max; maxgrad_pt++, gradxyii_pt++) {
     float dx = *((float*)gradxyii_pt);
     float dy = *(1+(float*)gradxyii_pt);
     *maxgrad_pt = sqrtf(dx*dx + dy*dy);
   }
 
-  // 2. smear up/down direction into temp buffer
-  maxgrad_pt = data.maxGradients[level] + width+1;
-  maxgrad_pt_max = data.maxGradients[level] + width*(height-1)-1;
-  float* maxgrad_t_pt = maxGradTemp + width+1;
-  for(;maxgrad_pt<maxgrad_pt_max; maxgrad_pt++, maxgrad_t_pt++)
-  {
+  // [question] zli: what does it mean by `smear`
+  // why `smear` like this?
+
+  // 2. smear up/down (grad.) direction into temp buffer
+  maxgrad_pt     = data.maxGradients[level] + width + 1;
+  maxgrad_pt_max = data.maxGradients[level] + width*(height-1) - 1;
+
+  float* maxGradTemp = FrameMemory::getInstance().getFloatBuffer(width * height);
+  float* maxgrad_t_pt = maxGradTemp + width + 1;
+
+  for (; maxgrad_pt < maxgrad_pt_max; maxgrad_pt++, maxgrad_t_pt++) {
     float g1 = maxgrad_pt[-width];
     float g2 = maxgrad_pt[0];
-    if(g1 < g2) g1 = g2;
     float g3 = maxgrad_pt[width];
-    if(g1 < g3)
+
+    if (g1 < g2) g1 = g2;
+
+    if (g1 < g3)
       *maxgrad_t_pt = g3;
     else
       *maxgrad_t_pt = g1;
   }
 
-  float numMappablePixels = 0;
   // 2. smear left/right direction into real data
-  maxgrad_pt = data.maxGradients[level] + width+1;
-  maxgrad_pt_max = data.maxGradients[level] + width*(height-1)-1;
-  maxgrad_t_pt = maxGradTemp + width+1;
+  float numMappablePixels = 0;
+
+  maxgrad_pt     = data.maxGradients[level] + width + 1;
+  maxgrad_pt_max = data.maxGradients[level] + width*(height-1) - 1;
+  maxgrad_t_pt   = maxGradTemp + width + 1;
+
   for (; maxgrad_pt < maxgrad_pt_max; maxgrad_pt++, maxgrad_t_pt++) {
     float g1 = maxgrad_t_pt[-1];
     float g2 = maxgrad_t_pt[0];
-    if (g1 < g2) g1 = g2;
     float g3 = maxgrad_t_pt[1];
+
+    if (g1 < g2) g1 = g2;
     if (g1 < g3) {
       *maxgrad_pt = g3;
       if (g3 >= MIN_ABS_GRAD_CREATE)

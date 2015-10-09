@@ -23,10 +23,9 @@
 
 namespace lsd_slam {
 
-// this is how a static member inited.
-int FramePoseStruct::cacheValidCounter = 0;
-
 int privateFramePoseStructAllocCount   = 0;
+
+int FramePoseStruct::cacheValidCounter = 0;
 
 FramePoseStruct::FramePoseStruct(Frame* frame) {
   cacheValidFor       = -1;

@@ -823,6 +823,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
 
   map->initializeRandomly(currentKeyFrame.get());
 
+  // by zli: addFrame! not addKeyFrame
   keyFrameGraph->addFrame(currentKeyFrame.get());
 
   currentKeyFrameMutex.unlock();
@@ -833,7 +834,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
     keyFrameGraph->idToKeyFrameMutex.unlock();
   }
 
-  if (continuousPCOutput && outputWrapper != 0)
+  if (continuousPCOutput && outputWrapper != nullptr)
     outputWrapper->publishKeyframe(currentKeyFrame.get());
 
   if (displayDepthMap || depthMapScreenshotFlag)
@@ -847,8 +848,7 @@ void SlamSystem::trackFrame(
     bool blockUntilMapped, double timestamp) {
 
   // Create new frame
-  std::shared_ptr<Frame> trackingNewFrame(
-      new Frame(frameID, width, height, K, timestamp, image));
+  std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));
 
   if (!trackingIsGood) {
     relocalizer.updateCurrentFrame(trackingNewFrame);
@@ -862,7 +862,8 @@ void SlamSystem::trackFrame(
 
   currentKeyFrameMutex.lock();
 
-  bool my_createNewKeyframe = createNewKeyFrame;    // pre-save here, to make decision afterwards.
+  // pre-save here, to make decision afterwards.
+  bool my_createNewKeyframe = createNewKeyFrame;
 
   // update trackingReference
   if (trackingReference->keyframe != currentKeyFrame.get() ||
@@ -872,8 +873,8 @@ void SlamSystem::trackFrame(
     trackingReferenceFrameSharedPT = currentKeyFrame;
   }
 
-  FramePoseStruct* trackingReferencePose =
-      trackingReference->keyframe->pose;
+  // by zli: tmp for pose
+  FramePoseStruct* trackingReferencePose = trackingReference->keyframe->pose;
 
   currentKeyFrameMutex.unlock();
 
@@ -884,7 +885,6 @@ void SlamSystem::trackFrame(
 
   poseConsistencyMutex.lock_shared();
   // by zli: ref: keyframe yet not finalized
-  // keyFrameGraph: seems to be all frame!!!!????
   SE3 frameToReference_initialEstimate = se3FromSim3(
       trackingReferencePose->getCamToWorld().inverse() *
       keyFrameGraph->allFramePoses.back()->getCamToWorld());
@@ -903,23 +903,14 @@ void SlamSystem::trackFrame(
 
   gettimeofday(&tv_end, NULL);
 
-  msTrackFrame = 0.9*msTrackFrame +
-                 0.1*(
-                     (tv_end.tv_sec - tv_start.tv_sec)*1000.0f +
-                     (tv_end.tv_usec - tv_start.tv_usec)/1000.0f);
+  msTrackFrame = 0.9*msTrackFrame + 0.1*((tv_end.tv_sec - tv_start.tv_sec)*1000.0f + (tv_end.tv_usec - tv_start.tv_usec)/1000.0f);
 
   nTrackFrame++;
 
   tracking_lastResidual     = tracker->lastResidual;
   tracking_lastUsage        = tracker->pointUsage;
-  tracking_lastGoodPerBad   = tracker->lastGoodCount /
-                              (tracker->lastGoodCount +
-                               tracker->lastBadCount);
-  tracking_lastGoodPerTotal = tracker->lastGoodCount /
-                              (trackingNewFrame->width(
-                                  SE3TRACKING_MIN_LEVEL)*
-                               trackingNewFrame->height(
-                                   SE3TRACKING_MIN_LEVEL));
+  tracking_lastGoodPerBad   = tracker->lastGoodCount / (tracker->lastGoodCount + tracker->lastBadCount);
+  tracking_lastGoodPerTotal = tracker->lastGoodCount / (trackingNewFrame->width(SE3TRACKING_MIN_LEVEL) * trackingNewFrame->height(SE3TRACKING_MIN_LEVEL));
 
   if (manualTrackingLossIndicated || tracker->diverged ||
       (keyFrameGraph->keyframesAll.size() >

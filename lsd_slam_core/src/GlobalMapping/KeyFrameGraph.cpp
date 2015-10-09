@@ -99,21 +99,17 @@ KeyFrameGraph::~KeyFrameGraph()
     delete p;
 }
 
-
-void KeyFrameGraph::addFrame(Frame* frame)
-{
+void KeyFrameGraph::addFrame(Frame* frame) {
 
   frame->pose->isRegisteredToGraph = true;
   FramePoseStruct* pose = frame->pose;
-
 
   allFramePosesMutex.lock();
   allFramePoses.push_back(pose);
   allFramePosesMutex.unlock();
 }
 
-void KeyFrameGraph::dumpMap(std::string folder)
-{
+void KeyFrameGraph::dumpMap(std::string folder) {
   printf("DUMP MAP: dumping to %s\n", folder.c_str());
 
   keyframesAllMutex.lock_shared();

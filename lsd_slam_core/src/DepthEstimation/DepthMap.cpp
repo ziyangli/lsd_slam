@@ -798,7 +798,7 @@ void DepthMap::initializeRandomly(Frame* new_frame) {
             20);
       }
       else {
-        currentDepthMap[x+y*width].isValid = false;
+        currentDepthMap[x+y*width].isValid     = false;
         currentDepthMap[x+y*width].blacklisted = 0;
       }
     }
