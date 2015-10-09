@@ -1405,7 +1405,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
       constraints.push_back(e2);
 
       // delete from far candidates if it's in there.
-      for (unsigned int k = 0;k < farCandidates.size();k++) {
+      for (unsigned int k = 0; k < farCandidates.size(); k++) {
         if (farCandidates[k] == candidate) {
           if (enablePrintDebugInfo && printConstraintSearchInfo)
             printf(" DELETED %d from far, as close was successful!\n", candidate->id());
@@ -1458,7 +1458,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
 
       poseConsistencyMutex.lock_shared();
       constraints.push_back(new KFConstraintStruct());
-      constraints.back()->firstFrame = newKeyFrame;
+      constraints.back()->firstFrame  = newKeyFrame;
       constraints.back()->secondFrame = newKeyFrame->getTrackingParent();
       constraints.back()->secondToFirst = constraints.back()->firstFrame->getScaledCamToWorld().inverse() * constraints.back()->secondFrame->getScaledCamToWorld();
       constraints.back()->information  <<
@@ -1474,10 +1474,10 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
       constraints.back()->robustKernel = new g2o::RobustKernelHuber();
       constraints.back()->robustKernel->setDelta(kernelDelta);
 
-      constraints.back()->meanResidual = 10;
+      constraints.back()->meanResidual  = 10;
       constraints.back()->meanResidualD = 10;
       constraints.back()->meanResidualP = 10;
-      constraints.back()->usage = 0;
+      constraints.back()->usage         = 0;
 
       poseConsistencyMutex.unlock_shared();
     }
@@ -1486,7 +1486,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   newConstraintMutex.lock();
 
   keyFrameGraph->addKeyFrame(newKeyFrame);
-  for (unsigned int i=0;i<constraints.size();i++)
+  for (unsigned int i = 0; i < constraints.size(); i++)
     keyFrameGraph->insertConstraint(constraints[i]);
 
   newConstraintAdded = true;
@@ -1499,8 +1499,7 @@ int SlamSystem::findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forcePar
   return constraints.size();
 }
 
-bool SlamSystem::optimizationIteration(
-    int itsPerTry, float minChange) {
+bool SlamSystem::optimizationIteration(int itsPerTry, float minChange) {
 
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
@@ -1525,7 +1524,7 @@ bool SlamSystem::optimizationIteration(
   for (size_t i = 0; i < keyFrameGraph->keyframesAll.size(); i++) {
     // set edge error sum to zero
     keyFrameGraph->keyframesAll[i]->edgeErrorSum = 0;
-    keyFrameGraph->keyframesAll[i]->edgesNum = 0;
+    keyFrameGraph->keyframesAll[i]->edgesNum     = 0;
 
     if (!keyFrameGraph->keyframesAll[i]->pose->isInGraph) continue;
 

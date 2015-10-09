@@ -310,8 +310,7 @@ bool KeyFrameGraph::addElementsFromBuffer() {
   return added;
 }
 
-int KeyFrameGraph::optimize(int num_iterations)
-{
+int KeyFrameGraph::optimize(int num_iterations) {
   // Abort if graph is empty, g2o shows an error otherwise
   if (graph.edges().size() == 0)
     return 0;
@@ -319,9 +318,7 @@ int KeyFrameGraph::optimize(int num_iterations)
   graph.setVerbose(false); // printOptimizationInfo
   graph.initializeOptimization();
 
-
   return graph.optimize(num_iterations, false);
-
 }
 
 void KeyFrameGraph::calculateGraphDistancesToFrame(Frame* startFrame, std::unordered_map<Frame*, int>* distanceMap) {
