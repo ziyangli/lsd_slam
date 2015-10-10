@@ -231,49 +231,42 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
   depthHasBeenUpdatedFlag = true;
 }
 
-void Frame::setDepthFromGroundTruth(const float* depth, float cov_scale)
-{
+void Frame::setDepthFromGroundTruth(const float* depth, float cov_scale) {
   boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
   const float* pyrMaxGradient = maxGradients(0);
 
-
-
   boost::unique_lock<boost::mutex> lock2(buildMutex);
-  if(data.idepth[0] == 0)
+  if (data.idepth[0] == 0)
     data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-  if(data.idepthVar[0] == 0)
+  if (data.idepthVar[0] == 0)
     data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 
-  float* pyrIDepth = data.idepth[0];
+  float* pyrIDepth    = data.idepth[0];
   float* pyrIDepthVar = data.idepthVar[0];
 
-  int width0 = data.width[0];
+  int width0  = data.width[0];
   int height0 = data.height[0];
 
-  for(int y=0;y<height0;y++)
-  {
-    for(int x=0;x<width0;x++)
-    {
+  for(int y = 0; y < height0; y++) {
+    for (int x = 0; x < width0; x++) {
       if (x > 0 && x < width0-1 && y > 0 && y < height0-1 && // pyramidMaxGradient is not valid for the border
           pyrMaxGradient[x+y*width0] >= MIN_ABS_GRAD_CREATE &&
-          !isnanf(*depth) && *depth > 0)
-      {
-        *pyrIDepth = 1.0f / *depth;
+          !isnanf(*depth) && *depth > 0) {
+        *pyrIDepth    = 1.0f / *depth;
         *pyrIDepthVar = VAR_GT_INIT_INITIAL * cov_scale;
       }
-      else
-      {
-        *pyrIDepth = -1;
+      else {
+        *pyrIDepth    = -1;
         *pyrIDepthVar = -1;
       }
 
-      ++ depth;
-      ++ pyrIDepth;
-      ++ pyrIDepthVar;
+      ++depth;
+      ++pyrIDepth;
+      ++pyrIDepthVar;
     }
   }
 
-  data.idepthValid[0] = true;
+  data.idepthValid[0]    = true;
   data.idepthVarValid[0] = true;
   //    data.refIDValid[0] = true;
   // Invalidate higher levels, they need to be updated with the new data

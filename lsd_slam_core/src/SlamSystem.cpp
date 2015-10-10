@@ -703,6 +703,7 @@ void SlamSystem::takeRelocalizeResult() {
 }
 
 bool SlamSystem::doMappingIteration() {
+
   if (currentKeyFrame == nullptr)
     return false;
 
@@ -913,8 +914,7 @@ void SlamSystem::trackFrame(
   tracking_lastGoodPerTotal = tracker->lastGoodCount / (trackingNewFrame->width(SE3TRACKING_MIN_LEVEL) * trackingNewFrame->height(SE3TRACKING_MIN_LEVEL));
 
   if (manualTrackingLossIndicated || tracker->diverged ||
-      (keyFrameGraph->keyframesAll.size() >
-       INITIALIZATION_PHASE_COUNT && !tracker->trackingWasGood)) {
+      (keyFrameGraph->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !tracker->trackingWasGood)) {
     printf("TRACKING LOST for frame %d (%1.2f%% good Points, which is %1.2f%% of available points, %s)!\n",
            trackingNewFrame->id(),
            100*tracking_lastGoodPerTotal,
@@ -937,11 +937,10 @@ void SlamSystem::trackFrame(
   if (plotTracking) {
     Eigen::Matrix<float, 20, 1> data;
     data.setZero();
-    data[0] = tracker->lastResidual;
-    data[3] = tracker->lastGoodCount /
-              (tracker->lastGoodCount + tracker->lastBadCount);
+    data[0] = tracking_lastResidual;
+    data[3] = tracking_lastGoodPerBad;
     data[4] = 4*tracker->lastGoodCount / (width*height);
-    data[5] = tracker->pointUsage;
+    data[5] = tracking_lastUsage;
     data[6] = tracker->affineEstimation_a;
     data[7] = tracker->affineEstimation_b;
     outputWrapper->publishDebugInfo(data);
@@ -965,17 +964,14 @@ void SlamSystem::trackFrame(
     Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() *
                             currentKeyFrame->meanIdepth;
 
-    float minVal = fmin(0.2f +
-                        keyFrameGraph->keyframesAll.size() * 0.8f /
-                        INITIALIZATION_PHASE_COUNT, 1.0f);
+    float minVal = fmin(0.2f + keyFrameGraph->keyframesAll.size() * 0.8f / INITIALIZATION_PHASE_COUNT, 1.0f);
 
-    if (keyFrameGraph->keyframesAll.size() <
-        INITIALIZATION_PHASE_COUNT)
+    if (keyFrameGraph->keyframesAll.size() < INITIALIZATION_PHASE_COUNT)
       minVal *= 0.7;
 
-    lastTrackingClosenessScore =
-        trackableKeyFrameSearch->getRefFrameScore(
-            dist.dot(dist), tracker->pointUsage);
+    // [note] zli: larger dist, less point, higher score
+    // [question] zli: can be called even if trackableKeyFrameSearch is null!!!???
+    lastTrackingClosenessScore = trackableKeyFrameSearch->getRefFrameScore(dist.dot(dist), tracker->pointUsage);
 
     if (lastTrackingClosenessScore > minVal) {
       createNewKeyFrame = true;

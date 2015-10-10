@@ -93,6 +93,7 @@ void TrackingReference::invalidate() {
 }
 
 void TrackingReference::makePointCloud(int level) {
+
   assert(keyframe != nullptr);
 
   boost::unique_lock<boost::mutex> lock(accessMutex);
@@ -100,13 +101,13 @@ void TrackingReference::makePointCloud(int level) {
   if (numData[level] > 0)
     return; // already exists.
 
-  int w            = keyframe->width(level);
-  int h            = keyframe->height(level);
+  const int w                          = keyframe->width(level);
+  const int h                          = keyframe->height(level);
 
-  float fxInvLevel = keyframe->fxInv(level);
-  float fyInvLevel = keyframe->fyInv(level);
-  float cxInvLevel = keyframe->cxInv(level);
-  float cyInvLevel = keyframe->cyInv(level);
+  const float fxInvLevel               = keyframe->fxInv(level);
+  const float fyInvLevel               = keyframe->fyInv(level);
+  const float cxInvLevel               = keyframe->cxInv(level);
+  const float cyInvLevel               = keyframe->cyInv(level);
 
   const float* pyrIdepthSource         = keyframe->idepth(level);
   const float* pyrIdepthVarSource      = keyframe->idepthVar(level);
@@ -125,8 +126,8 @@ void TrackingReference::makePointCloud(int level) {
   if (colorAndVarData[level] == nullptr)
     colorAndVarData[level] = new Eigen::Vector2f[w*h];
 
-  Eigen::Vector3f* posDataPT         = posData[level];
   int* idxPT                         = pointPosInXYGrid[level];
+  Eigen::Vector3f* posDataPT         = posData[level];
   Eigen::Vector2f* gradDataPT        = gradData[level];
   Eigen::Vector2f* colorAndVarDataPT = colorAndVarData[level];
 
@@ -138,9 +139,10 @@ void TrackingReference::makePointCloud(int level) {
       if (pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0)
         continue;
 
+      // [question] zli: x = (u - cx) * d / fx ?
       *posDataPT = (1.0f / pyrIdepthSource[idx]) *
-                   Eigen::Vector3f(fxInvLevel*x+cxInvLevel,
-                                   fyInvLevel*y+cyInvLevel,
+                   Eigen::Vector3f(fxInvLevel*x + cxInvLevel,
+                                   fyInvLevel*y + cyInvLevel,
                                    1);
       *gradDataPT = pyrGradSource[idx].head<2>();
       *colorAndVarDataPT = Eigen::Vector2f(pyrColorSource[idx],

@@ -261,8 +261,7 @@ SE3 SE3Tracker::trackFrame(
     const SE3& frameToReference_initialEstimate) {
 
   // lock current frame
-  boost::shared_lock<boost::shared_mutex> lock =
-      frame->getActiveLock();
+  boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
 
   diverged           = false;
   trackingWasGood    = true;
@@ -276,8 +275,8 @@ SE3 SE3Tracker::trackFrame(
 
   if (plotTrackingIterationInfo) {
     const float* frameImage = frame->image();
-    for (int row = 0; row < height; ++ row)
-      for (int col = 0; col < width; ++ col)
+    for (int row = 0; row < height; ++row)
+      for (int col = 0; col < width; ++col)
         setPixelInCvMat(&debugImageSecondFrame,
                         getGrayCvPixel(frameImage[col+row*width]),
                         col, row, 1);
@@ -294,8 +293,7 @@ SE3 SE3Tracker::trackFrame(
   float last_residual = 0;
 
   // corse-to-fine optimization
-  for (int lvl = SE3TRACKING_MAX_LEVEL - 1;
-       lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
+  for (int lvl = SE3TRACKING_MAX_LEVEL - 1; lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
     numCalcResidualCalls[lvl]   = 0;
     numCalcWarpUpdateCalls[lvl] = 0;
 
@@ -310,6 +308,7 @@ SE3 SE3Tracker::trackFrame(
                    frame, referenceToFrame, lvl,
                    (plotTracking && lvl == SE3TRACKING_MIN_LEVEL)));
 
+    // [note] zli: strong constraint of photoconsistency
     if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width >> lvl) * (height >> lvl)) {
       diverged        = true;
       trackingWasGood = false;
@@ -321,8 +320,7 @@ SE3 SE3Tracker::trackFrame(
       affineEstimation_b = affineEstimation_b_lastIt;
     }
 
-    float lastErr = callOptimized(calcWeightsAndResidual,
-                                  (referenceToFrame));
+    float lastErr = callOptimized(calcWeightsAndResidual, (referenceToFrame));
 
     numCalcResidualCalls[lvl]++;
 
@@ -399,6 +397,8 @@ SE3 SE3Tracker::trackFrame(
             if (enablePrintDebugInfo && printTrackingIterationInfo) {
               printf("(%d-%d): FINISHED pyramid level (last residual reduction too small).\n", lvl, iteration);
             }
+
+            // set to stop the for loop
             iteration = settings.maxItsPerLvl[lvl];
           }
 
@@ -460,8 +460,7 @@ SE3 SE3Tracker::trackFrame(
     reference->keyframe->numFramesTrackedOnThis++;
 
   frame->initialTrackedResidual = lastResidual / pointUsage;
-  frame->pose->thisToParent_raw = sim3FromSE3(
-      toSophus(referenceToFrame.inverse()), 1);
+  frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()), 1);
   frame->pose->trackingParent   = reference->keyframe->pose;
   return toSophus(referenceToFrame.inverse());
 }
@@ -754,6 +753,7 @@ void SE3Tracker::calcResidualAndBuffers_debugStart() {
 }
 
 void SE3Tracker::calcResidualAndBuffers_debugFinish(int w) {
+
   if (plotTrackingIterationInfo) {
     Util::displayImage( "Weights", debugImageWeights );
     Util::displayImage( "second_frame", debugImageSecondFrame );
@@ -842,16 +842,16 @@ float SE3Tracker::calcResidualAndBuffers(
   if (plotResidual)
     debugImageResiduals.setTo(0);
 
-  int w                    = frame->width(level);
-  int h                    = frame->height(level);
-  Eigen::Matrix3f KLvl     = frame->K(level);
-  float fx_l               = KLvl(0,0);
-  float fy_l               = KLvl(1,1);
-  float cx_l               = KLvl(0,2);
-  float cy_l               = KLvl(1,2);
+  const int w                    = frame->width(level);
+  const int h                    = frame->height(level);
+  const Eigen::Matrix3f KLvl     = frame->K(level);
+  const float fx_l               = KLvl(0,0);
+  const float fy_l               = KLvl(1,1);
+  const float cx_l               = KLvl(0,2);
+  const float cy_l               = KLvl(1,2);
 
-  Eigen::Matrix3f rotMat   = referenceToFrame.rotationMatrix();
-  Eigen::Vector3f transVec = referenceToFrame.translation();
+  const Eigen::Matrix3f rotMat   = referenceToFrame.rotationMatrix();
+  const Eigen::Vector3f transVec = referenceToFrame.translation();
 
   const Eigen::Vector4f* frame_gradients = frame->gradients(level);
 
@@ -869,8 +869,9 @@ float SE3Tracker::calcResidualAndBuffers(
   int idx          = 0;  // num of good points
   float usageCount = 0;  // effective good points
   const Eigen::Vector3f* refPoint_max = refPoint + refNum;
-  for(; refPoint < refPoint_max; refPoint++, refColVar++, idxBuf++) {
+  for (; refPoint < refPoint_max; refPoint++, refColVar++, idxBuf++) {
 
+    // p_{r} = R^{r}_{k} p_{k} + T^{r}_{k}
     Eigen::Vector3f Wxp = rotMat * (*refPoint) + transVec;
     float u_new = (Wxp[0]/Wxp[2])*fx_l + cx_l;
     float v_new = (Wxp[1]/Wxp[2])*fy_l + cy_l;
@@ -883,6 +884,7 @@ float SE3Tracker::calcResidualAndBuffers(
       continue;
     }
 
+    // note: u_new and v_new are floats!!!
     Eigen::Vector3f resInterp = getInterpolatedElement43(frame_gradients, u_new, v_new, w);
 
     float c1 = affineEstimation_a * (*refColVar)[0] + affineEstimation_b;
@@ -890,15 +892,15 @@ float SE3Tracker::calcResidualAndBuffers(
     float residual = c1 - c2;
 
     float weight = fabsf(residual) < 5.0f ? 1 : 5.0f / fabsf(residual);
-    sxx += c1*c1*weight;
-    syy += c2*c2*weight;
-    sx  += c1*weight;
-    sy  += c2*weight;
-    sw  += weight;
+    sxx         += c1*c1*weight;
+    syy         += c2*c2*weight;
+    sx          += c1*weight;
+    sy          += c2*weight;
+    sw          += weight;
 
     bool isGood = residual*residual / (MAX_DIFF_CONSTANT + MAX_DIFF_GRAD_MULT*(resInterp[0]*resInterp[0] + resInterp[1]*resInterp[1])) < 1;
 
-    if (isGoodOutBuffer != 0)
+    if (isGoodOutBuffer != nullptr)
       isGoodOutBuffer[*idxBuf] = isGood;
 
     *(buf_warped_x+idx)        = Wxp(0);
@@ -909,8 +911,10 @@ float SE3Tracker::calcResidualAndBuffers(
     *(buf_warped_dy+idx)       = fy_l * resInterp[1];
     *(buf_warped_residual+idx) = residual;
 
+    // [note] zli: not warped
     *(buf_d+idx)               = 1.0f / (*refPoint)[2];
     *(buf_idepthVar+idx)       = (*refColVar)[1];
+
     idx++;
 
     if (isGood) {
@@ -921,7 +925,8 @@ float SE3Tracker::calcResidualAndBuffers(
     else
       badCount++;
 
-    float depthChange = (*refPoint)[2] / Wxp[2];    // if depth becomes larger: pixel becomes "smaller", hence count it less.
+    float depthChange = (*refPoint)[2] / Wxp[2];
+    // if depth becomes larger: pixel becomes "smaller", hence count it less.
     usageCount += depthChange < 1 ? depthChange : 1;
 
     // DEBUG STUFF

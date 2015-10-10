@@ -398,11 +398,11 @@ inline const float* Frame::idepthVar(int level) {
 }
 
 inline bool* Frame::refPixelWasGood() {
-  if (data.refPixelWasGood == 0) {
+  if (data.refPixelWasGood == nullptr) {
     boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-    if (data.refPixelWasGood == 0) {
-      int width = data.width[SE3TRACKING_MIN_LEVEL];
+    if (data.refPixelWasGood == nullptr) {
+      int width  = data.width[SE3TRACKING_MIN_LEVEL];
       int height = data.height[SE3TRACKING_MIN_LEVEL];
       data.refPixelWasGood = (bool*)FrameMemory::getInstance().getBuffer(sizeof(bool) * width * height);
 
