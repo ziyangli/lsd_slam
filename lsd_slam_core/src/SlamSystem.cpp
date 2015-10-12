@@ -406,7 +406,7 @@ void SlamSystem::finishCurrentKeyframe() {
     }
   }
 
-  if (outputWrapper!= 0)
+  if (outputWrapper!= nullptr)
     outputWrapper->publishKeyframe(currentKeyFrame.get());
 }
 
@@ -532,9 +532,11 @@ bool SlamSystem::updateKeyframe() {
 
   // clone list
   if (unmappedTrackedFrames.size() > 0) {
+
     for (unsigned int i = 0; i < unmappedTrackedFrames.size(); i++)
       references.push_back(unmappedTrackedFrames[i]);
 
+    // [question] zli: pop this since this is the active kf?
     std::shared_ptr<Frame> popped = unmappedTrackedFrames.front();
     unmappedTrackedFrames.pop_front();
     unmappedTrackedFramesMutex.unlock();
@@ -597,7 +599,7 @@ void SlamSystem::addTimingSamples() {
     nAvgFindReferences = 0.8*nAvgFindReferences + 0.2*(nFindReferences / sPassed);
     nFindReferences = 0;
 
-    if (trackableKeyFrameSearch != 0) {
+    if (trackableKeyFrameSearch != nullptr) {
       trackableKeyFrameSearch->nAvgTrackPermaRef = 0.8*trackableKeyFrameSearch->nAvgTrackPermaRef + 0.2*(trackableKeyFrameSearch->nTrackPermaRef / sPassed);
       trackableKeyFrameSearch->nTrackPermaRef = 0;
     }
@@ -628,18 +630,20 @@ void SlamSystem::debugDisplayDepthMap() {
 
   map->debugPlotDepthMap();
   double scale = 1;
-  if (currentKeyFrame != 0 && currentKeyFrame != 0)
+  if (currentKeyFrame != nullptr)
     scale = currentKeyFrame->getScaledCamToWorld().scale();
   // debug plot depthmap
   char buf1[200];
   char buf2[200];
 
-  snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d / %d",
+  snprintf(buf1, 200, "Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d / %d",
            map->msUpdate, map->nAvgUpdate,
            msTrackFrame, nAvgTrackFrame,
-           currentKeyFrame->numFramesTrackedOnThis, currentKeyFrame->numMappedOnThis, (int)unmappedTrackedFrames.size());
+           currentKeyFrame->numFramesTrackedOnThis,
+           currentKeyFrame->numMappedOnThis,
+           (int)unmappedTrackedFrames.size());
 
-  snprintf(buf2,200,"dens %2.0f%%; good %2.0f%%; scale %2.2f; res %2.1f/; usg %2.0f%%; Map: %d F, %d KF, %d E, %.1fm Pts",
+  snprintf(buf2, 200, "dens %2.0f%%; good %2.0f%%; scale %2.2f; res %2.1f/; usg %2.0f%%; Map: %d F, %d KF, %d E, %.1fm Pts",
            100*currentKeyFrame->numPoints/(float)(width*height),
            100*tracking_lastGoodPerBad,
            scale,

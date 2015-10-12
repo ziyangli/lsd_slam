@@ -126,7 +126,7 @@ void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap) {
   unsigned char* val_pt = data.validity_reAct;
 
   float* id_pt_max      = data.idepth_reAct + (data.width[0]*data.height[0]);
-  for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap) {
+  for (; id_pt < id_pt_max; ++id_pt, ++idv_pt, ++val_pt, ++depthMap) {
     if (depthMap->isValid) {
       *id_pt  = depthMap->idepth;
       *idv_pt = depthMap->idepth_var;
@@ -206,7 +206,7 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
   int numIdepth       = 0;
 
   float* pyrIDepthMax = pyrIDepth + (data.width[0]*data.height[0]);
-  for (; pyrIDepth < pyrIDepthMax; ++ pyrIDepth, ++ pyrIDepthVar, ++ newDepth) //, ++ pyrRefID)
+  for (; pyrIDepth < pyrIDepthMax; ++pyrIDepth, ++pyrIDepthVar, ++newDepth) //, ++ pyrRefID)
   {
     if (newDepth->isValid && newDepth->idepth_smoothed >= -0.05) {
       *pyrIDepth    = newDepth->idepth_smoothed;
@@ -222,7 +222,7 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth) {
   }
 
   meanIdepth = sumIdepth / numIdepth;
-  numPoints = numIdepth;
+  numPoints  = numIdepth;
 
   data.idepthValid[0]     = true;
   data.idepthVarValid[0]  = true;
