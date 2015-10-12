@@ -185,8 +185,8 @@ SE3 SE3Tracker::trackFrameOnPermaref(
     int incTry = 0;
     while (true) {
       // solve LS system with current lambda
-      Vector6 b   = -ls.b;
-      Matrix6x6 A = ls.A;
+      Vector6 b   = - ls.b;
+      Matrix6x6 A =   ls.A;
       for (int i = 0; i < 6; i++)
         A(i,i) *= 1+LM_lambda;
       Vector6 inc = A.ldlt().solve(b);
