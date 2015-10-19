@@ -1,0 +1,65 @@
+@startuml
+    skinparam dpi 300
+
+    class SlamSystem {
+        .. shared_ptr<Frame> ..
+        - currentKeyFrame
+        - trackingReferenceFrameSharedPT
+
+        .. SE3Tracker* ..
+        + tracker
+
+        .. DepthMap* ..
+        + map
+
+        .. TrackingReference* ..
+        + trackingReference
+        + mappingTrackingReference
+
+        .. bool ..
+        - createNewKeyFrame
+        + trackingIsGood
+
+
+
+        __
+        + randomInit()
+
+
+
+
+}
+
+
+class Relocalizer {
+
+}
+
+class SE3Tracker {
+
+}
+
+class DepthMap {
+      .. shared_mutex ..
+      - activeKeyFramelock
+
+      .. Frame* ..
+      - activeKeyFrame
+
+      .. float* ..
+      activeKeyFrameImageData
+
+
+}
+
+class TrackingReference {
+
+}
+
+
+SlamSystem *-- Relocalizer
+SlamSystem *-- SE3Tracker
+SlamSystem *-- DepthMap
+SlamSystem *-- TrackingReference
+
+@enduml

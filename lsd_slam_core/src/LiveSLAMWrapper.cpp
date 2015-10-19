@@ -28,15 +28,17 @@
 
 #include "IOWrapper/ImageDisplay.h"
 #include "IOWrapper/Output3DWrapper.h"
-#include "IOWrapper/InputImageStream.h"
+
 #include "util/globalFuncs.h"
 
 namespace lsd_slam {
 
-LiveSLAMWrapper::LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper) {
+LiveSLAMWrapper::LiveSLAMWrapper(InputPoseStream* poseStream, InputImageStream* imageStream, Output3DWrapper* outputWrapper) {
+  this->poseStream    = poseStream;
   this->imageStream   = imageStream;
   this->outputWrapper = outputWrapper;
 
+  poseStream->getBuffer()->setReceiver(this);
   imageStream->getBuffer()->setReceiver(this);
 
   fx     = imageStream->fx();

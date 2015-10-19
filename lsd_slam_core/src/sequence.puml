@@ -1,0 +1,44 @@
+@startuml
+skinparam dpi 150
+hide footbox
+
+control currentKeyFrameMutex
+box "SlamSystem::randomInit"
+participant currentKeyFrameMutex
+participant slamNode
+end box
+
+control activeKeyFramelock
+box "DepthMap::initializeRandomly"
+participant map
+participant activeKeyFramelock
+end box
+
+entity frame
+
+slamNode -> currentKeyFrameMutex : lock
+activate currentKeyFrameMutex
+
+slamNode -> slamNode: //**currentKeyFrame.reset**//
+activate slamNode
+deactivate slamNode
+
+slamNode -> map: init randomly
+
+map -> activeKeyFramelock : lock
+activate activeKeyFramelock
+
+
+
+
+map <-- activeKeyFramelock : unlock
+deactivate activeKeyFramelock
+
+
+
+
+slamNode --> currentKeyFrameMutex : unlock
+deactivate currentKeyFrameMutex
+
+
+@enduml

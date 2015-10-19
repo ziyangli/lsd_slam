@@ -29,8 +29,6 @@
 #include "IOWrapper/ROS/ROSImageStreamThread.h"
 #include "IOWrapper/ROS/ROSPoseStreamThread.h"
 
-#include "IOWrapper/InputPoseStream.h"
-
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "IOWrapper/ROS/rosReconfigure.h"
 
@@ -51,27 +49,31 @@ int main(int argc, char** argv) {
 
   packagePath = ros::package::getPath("lsd_slam_core") + "/";
 
-  InputImageStream* inputStream = new ROSImageStreamThread();
+  InputPoseStream* inputPoseStream = new ROSPoseStreamThread();
+  InputImageStream* inputImgStream = new ROSImageStreamThread();
 
   std::string calibFile;
   if (ros::param::get("~calib", calibFile)) {
     ros::param::del("~calib");
-    inputStream->setCalibration(calibFile);
+    inputImgStream->setCalibration(calibFile);
   }
   else
-    inputStream->setCalibration("");
+    inputImgStream->setCalibration("");
 
-  inputStream->run();
+  inputImgStream->run();
+  inputPoseStream->run();
 
-  Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(inputStream->width(), inputStream->height());
+  Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(inputImgStream->width(), inputImgStream->height());
 
-  LiveSLAMWrapper slamNode(inputStream, outputWrapper);
+  LiveSLAMWrapper slamNode(inputPoseStream, inputImgStream, outputWrapper);
 
   slamNode.Loop();
 
-  if (inputStream != nullptr)
-    delete inputStream;
-  if (outputWrapper != nullptr)
+  if (inputPoseStream != nullptr)
+    delete inputPoseStream;
+  if (inputImgStream  != nullptr)
+    delete inputImgStream;
+  if (outputWrapper   != nullptr)
     delete outputWrapper;
 
   return 0;

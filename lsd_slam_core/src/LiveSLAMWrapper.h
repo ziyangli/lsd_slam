@@ -27,6 +27,10 @@
 #include "IOWrapper/Timestamp.h"
 #include "IOWrapper/NotifyBuffer.h"
 #include "IOWrapper/TimestampedObject.h"
+
+#include "IOWrapper/InputImageStream.h"
+#include "IOWrapper/InputPoseStream.h"
+
 #include "util/SophusUtil.h"
 
 namespace cv {
@@ -45,7 +49,7 @@ struct LiveSLAMWrapper : public Notifiable {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  LiveSLAMWrapper(InputImageStream* imageStream, Output3DWrapper* outputWrapper);
+  LiveSLAMWrapper(InputPoseStream* poseStream, InputImageStream* imageStream, Output3DWrapper* outputWrapper);
 
   /** Destructor. */
   ~LiveSLAMWrapper();
@@ -69,7 +73,9 @@ struct LiveSLAMWrapper : public Notifiable {
 
  private:
 
+  InputPoseStream*  poseStream;
   InputImageStream* imageStream;
+
   Output3DWrapper* outputWrapper;
 
   // initialization stuff
