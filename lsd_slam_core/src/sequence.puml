@@ -28,8 +28,13 @@ slamNode -> map: init randomly
 map -> activeKeyFramelock : lock
 activate activeKeyFramelock
 
+frame -> frame : //maxGradients//\ninit. all frame-hosted buffers
+activate frame
+deactivate frame
 
-
+map -> map: init. \n//**currentDepthMap**//\nfor big gradients
+activate map
+deactivate map
 
 map <-- activeKeyFramelock : unlock
 deactivate activeKeyFramelock
