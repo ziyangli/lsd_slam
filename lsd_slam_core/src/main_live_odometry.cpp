@@ -27,6 +27,10 @@
 #include "SlamSystem.h"
 
 #include "IOWrapper/ROS/ROSImageStreamThread.h"
+#include "IOWrapper/ROS/ROSPoseStreamThread.h"
+
+#include "IOWrapper/InputPoseStream.h"
+
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "IOWrapper/ROS/rosReconfigure.h"
 
@@ -60,6 +64,7 @@ int main(int argc, char** argv) {
   inputStream->run();
 
   Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(inputStream->width(), inputStream->height());
+
   LiveSLAMWrapper slamNode(inputStream, outputWrapper);
 
   slamNode.Loop();
