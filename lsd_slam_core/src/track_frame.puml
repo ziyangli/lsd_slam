@@ -1,0 +1,85 @@
+@startuml
+skinparam dpi 150
+hide footbox
+
+control currentKeyFrameMutex
+control poseConsistencyMutex
+entity trackingNewFrame
+entity trackingReference
+entity currentKeyFrame
+box "SlamSystem::trackFrame"
+participant currentKeyFrameMutex
+participant trackingNewFrame
+participant trackingReference
+participant slamNode
+participant currentKeyFrame
+participant poseConsistencyMutex
+end box
+
+box "SE3Tracker::trackFrame"
+participant tracker
+end box
+
+trackingNewFrame -> trackingNewFrame: init. with\nnewed **Frame**
+activate trackingNewFrame
+deactivate trackingNewFrame
+
+slamNode -> currentKeyFrameMutex : lock
+activate currentKeyFrameMutex
+
+alt update trackingReference
+slamNode -> trackingReference : //**currentKeyFrame**//
+trackingReference -> trackingReference : //importFrame()//
+activate trackingReference
+
+trackingReference -> currentKeyFrame : lock
+activate currentKeyFrame
+currentKeyFrame --> trackingReference : //**frameID**//\n//**keyframe**//
+trackingReference --> currentKeyFrame : unlock
+deactivate currentKeyFrame
+
+deactivate trackingReference
+
+end
+
+slamNode --> currentKeyFrameMutex : unlock
+deactivate currentKeyFrameMutex
+
+slamNode -> poseConsistencyMutex : //lock_shared()//
+activate poseConsistencyMutex
+
+slamNode -> slamNode : //R_{ref}_{trk}//
+activate slamNode
+deactivate slamNode
+
+slamNode --> poseConsistencyMutex : //unlock_shared()//
+
+deactivate poseConsistencyMutex
+
+slamNode -> tracker : frame, keyframe, R_init
+tracker -> trackingNewFrame : shared_lock
+activate trackingNewFrame
+
+tracker -> trackingReference
+trackingReference -> trackingReference : //makePointCloud()//
+activate trackingReference
+trackingReference --> tracker: **posData**\n**pointPosInXYGrid**\n**gradData**\n**colorAndVarData**\n**numData**
+deactivate trackingReference
+
+trackingNewFrame --> tracker : gradients\nisGoodOutBuffer
+
+tracker -> tracker : //calcResidualAndBuffers()//
+activate tracker
+tracker -> tracker : //calcWeightsAndResidual()//
+
+loop settings.maxIts
+tracker -> tracker : //calculateWarpUpdate()//
+end
+
+tracker --> slamNode : //R_{trk}_{ref}//
+deactivate tracker
+
+
+deactivate trackingNewFrame
+
+@enduml

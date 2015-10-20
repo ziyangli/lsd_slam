@@ -1,0 +1,57 @@
+@startuml
+skinparam dpi 150
+hide footbox
+
+control currentKeyFrameMutex
+entity currentKeyFrame
+box "SlamSystem::randomInit"
+participant currentKeyFrameMutex
+participant currentKeyFrame
+participant slamNode
+end box
+
+control activeKeyFramelock
+box "DepthMap::initializeRandomly"
+participant map
+participant activeKeyFramelock
+end box
+
+slamNode -> currentKeyFrameMutex : lock
+activate currentKeyFrameMutex
+
+currentKeyFrame -> currentKeyFrame: //reset()//\nwith newed **Frame**
+activate currentKeyFrame
+deactivate currentKeyFrame
+
+slamNode -> map: init randomly
+
+map -> activeKeyFramelock : lock
+activate activeKeyFramelock
+
+map <-- currentKeyFrame : //**activeKeyFrame**//\n//**activeKeyFrameImageData**//
+
+currentKeyFrame -> currentKeyFrame : //maxGradients()//\ninit. all frame-hosted buffers
+activate currentKeyFrame
+currentKeyFrame --> map: gradients
+deactivate currentKeyFrame
+
+map -> map : init. \n//**currentDepthMap**//\nfor big gradients
+activate map
+map --> currentKeyFrame : //currentDepthMap//
+deactivate map
+
+currentKeyFrame -> currentKeyFrame : //setDepth()//
+activate currentKeyFrame
+deactivate currentKeyFrame
+
+map <-- activeKeyFramelock : unlock
+deactivate activeKeyFramelock
+
+
+
+
+slamNode --> currentKeyFrameMutex : unlock
+deactivate currentKeyFrameMutex
+
+
+@enduml

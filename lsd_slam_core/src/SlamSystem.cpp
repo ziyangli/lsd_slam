@@ -632,6 +632,7 @@ void SlamSystem::debugDisplayDepthMap() {
   double scale = 1;
   if (currentKeyFrame != nullptr)
     scale = currentKeyFrame->getScaledCamToWorld().scale();
+
   // debug plot depthmap
   char buf1[200];
   char buf2[200];
