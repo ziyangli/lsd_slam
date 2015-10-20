@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     inputImgStream->setCalibration("");
 
   inputImgStream->run();
-  inputPoseStream->run();
+  // inputPoseStream->run();
 
   Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(inputImgStream->width(), inputImgStream->height());
 

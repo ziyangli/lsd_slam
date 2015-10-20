@@ -13,5 +13,10 @@
   <depend package="sensor_msgs"/>
   <depend package="roslib"/>
   <depend package="rosbag"/>
+
+  <depend package="tf"/>
+  <depend package="nav_msgs"/>
+  <depend package="geometry_msgs"/>
+
   <depend package="lsd_slam_viewer"/>
 </package> 

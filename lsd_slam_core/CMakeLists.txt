@@ -108,3 +108,5 @@ target_link_libraries(live_slam lsdslam)
 # build image node
 rosbuild_add_executable(dataset_slam src/main_on_images.cpp)
 target_link_libraries(dataset_slam lsdslam)
+
+rosbuild_add_executable(tf_node src/tf_listener.cpp)
