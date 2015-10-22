@@ -24,12 +24,6 @@
 #include <fstream>
 #include <chrono>
 
-#include "IOWrapper/Timestamp.h"
-#include "IOWrapper/NotifyBuffer.h"
-#include "IOWrapper/TimestampedObject.h"
-
-#include "IOWrapper/InputImageStream.h"
-#include "IOWrapper/InputPoseStream.h"
 #include "IOWrapper/InputStream.h"
 
 #include "util/SophusUtil.h"
@@ -70,22 +64,20 @@ struct LiveSLAMWrapper : public Notifiable {
   /** Writes the given time and pose to the outFile. */
   void logCameraPose(const SE3& camToWorld, double time);
 
-  inline SlamSystem* getSlamSystem() {return monoOdometry;}
+  inline SlamSystem* getSlamSystem() {
+    return monoOdometry;
+  }
 
  private:
 
   InputStream*      inputStream;
+  Output3DWrapper*  outputWrapper;
+  SlamSystem*       monoOdometry;
 
-  Output3DWrapper* outputWrapper;
+  bool              isInitialized;
 
-  // initialization stuff
-  bool isInitialized;
-
-  // monoOdometry
-  SlamSystem* monoOdometry;
-
-  std::string outFileName;
-  std::ofstream* outFile;
+  std::string       outFileName;
+  std::ofstream*    outFile;
 
   float fx, fy, cx, cy;
   int width, height;
