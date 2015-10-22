@@ -30,6 +30,7 @@
 
 #include "IOWrapper/InputImageStream.h"
 #include "IOWrapper/InputPoseStream.h"
+#include "IOWrapper/InputStream.h"
 
 #include "util/SophusUtil.h"
 
@@ -41,7 +42,7 @@ namespace lsd_slam {
 
 class SlamSystem;
 class LiveSLAMWrapperROS;
-class InputImageStream;
+
 class Output3DWrapper;
 
 struct LiveSLAMWrapper : public Notifiable {
@@ -49,7 +50,7 @@ struct LiveSLAMWrapper : public Notifiable {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  LiveSLAMWrapper(InputPoseStream* poseStream, InputImageStream* imageStream, Output3DWrapper* outputWrapper);
+  LiveSLAMWrapper(InputStream* inputStream, Output3DWrapper* outputWrapper);
 
   /** Destructor. */
   ~LiveSLAMWrapper();
@@ -73,8 +74,7 @@ struct LiveSLAMWrapper : public Notifiable {
 
  private:
 
-  InputPoseStream*  poseStream;
-  InputImageStream* imageStream;
+  InputStream*      inputStream;
 
   Output3DWrapper* outputWrapper;
 

@@ -33,20 +33,20 @@
 
 namespace lsd_slam {
 
-LiveSLAMWrapper::LiveSLAMWrapper(InputPoseStream* poseStream, InputImageStream* imageStream, Output3DWrapper* outputWrapper) {
-  this->poseStream    = poseStream;
-  this->imageStream   = imageStream;
+LiveSLAMWrapper::LiveSLAMWrapper(InputStream* inputStream, Output3DWrapper* outputWrapper) {
+
+  this->inputStream   = inputStream;
   this->outputWrapper = outputWrapper;
 
-  poseStream->getBuffer()->setReceiver(this);
-  imageStream->getBuffer()->setReceiver(this);
+  inputStream->getImgBuffer()->setReceiver(this);
+  inputStream->getPoseBuffer()->setReceiver(this);
 
-  fx     = imageStream->fx();
-  fy     = imageStream->fy();
-  cx     = imageStream->cx();
-  cy     = imageStream->cy();
-  width  = imageStream->width();
-  height = imageStream->height();
+  fx     = inputStream->fx();
+  fy     = inputStream->fy();
+  cx     = inputStream->cx();
+  cy     = inputStream->cy();
+  width  = inputStream->width();
+  height = inputStream->height();
 
   outFileName = packagePath + "estimated_poses.txt";
 
@@ -81,11 +81,11 @@ void LiveSLAMWrapper::Loop() {
 
   while (true) {
 
-    boost::unique_lock<boost::recursive_mutex> waitLock(imageStream->getBuffer()->getMutex());
+    boost::unique_lock<boost::recursive_mutex> waitLock(inputStream->getImgBuffer()->getMutex());
 
     // wait for an image
     while (!fullResetRequested &&
-           !(imageStream->getBuffer()->size() > 0)) {
+           !(inputStream->getImgBuffer()->size() > 0)) {
       notifyCondition.wait(waitLock);
     }
     waitLock.unlock();
@@ -93,13 +93,13 @@ void LiveSLAMWrapper::Loop() {
     if (fullResetRequested) {
       resetAll();
       fullResetRequested = false;
-      if (!(imageStream->getBuffer()->size() > 0))
+      if (!(inputStream->getImgBuffer()->size() > 0))
         continue;
     }
 
     // no need to lock first???
-    TimestampedMat image = imageStream->getBuffer()->first();
-    imageStream->getBuffer()->popFront();
+    TimestampedMat image = inputStream->getImgBuffer()->first();
+    inputStream->getImgBuffer()->popFront();
 
     // process image
     // Util::displayImage("MyVideo", image.data);

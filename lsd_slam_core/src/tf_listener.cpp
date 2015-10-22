@@ -4,6 +4,8 @@
 #include <tf/transform_listener.h>
 #include <nav_msgs/Odometry.h>
 
+#include <sensor_msgs/Image.h>
+
 #include <geometry_msgs/Vector3.h>
 
 int main(int argc, char** argv) {
@@ -17,13 +19,13 @@ int main(int argc, char** argv) {
   ros::Publisher odom_pub = nh.advertise<nav_msgs::Odometry>("odom", 1);
   ros::Publisher debug_pub = nh.advertise<geometry_msgs::Vector3>("debug", 1);
 
-  ros::Rate rate(200.0);
+  ros::Rate rate(100.0);
 
-  // std::string frame_id         = "kinect"; // "world";
-  // std::string child_frame_id   = "openni_rgb_optical_frame";
+  std::string frame_id         = "openni_camera"; // "world";
+  std::string child_frame_id   = "openni_rgb_optical_frame";
 
-  std::string frame_id         = "world"; // "world";
-  std::string child_frame_id   = "kinect";
+  // std::string frame_id         = "world"; // "world";
+  // std::string child_frame_id   = "kinect";
 
   while (ros::ok()) {
     tf::StampedTransform transform;
@@ -39,7 +41,7 @@ int main(int argc, char** argv) {
     static ros::Time pTime = transform.stamp_;
     ros::Duration diff = transform.stamp_ - pTime;
     if (diff.toSec() * 1000 < 1) {
-      ROS_WARN("same tf");
+      ROS_WARN("same tf %f %f", pTime.toSec(), transform.stamp_.toSec());
       continue;
     }
     pTime = transform.stamp_;
