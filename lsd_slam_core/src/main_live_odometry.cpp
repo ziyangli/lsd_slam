@@ -68,9 +68,9 @@ int main(int argc, char** argv) {
 
   slamNode.Loop();
 
-  if (inputStream != nullptr)
+  if (inputStream   != nullptr)
     delete inputStream;
-  if (outputWrapper   != nullptr)
+  if (outputWrapper != nullptr)
     delete outputWrapper;
 
   return 0;

@@ -47,7 +47,6 @@ void ROSInputStreamThread::operator()() {
 
 
 void ROSInputStreamThread::odomCb(const nav_msgs::OdometryConstPtr odom) {
-
   TimestampedPose bufferItem;
   bufferItem.timestamp = Timestamp(odom->header.stamp.toSec());
 
@@ -68,7 +67,6 @@ void ROSInputStreamThread::odomCb(const nav_msgs::OdometryConstPtr odom) {
 }
 
 void ROSInputStreamThread::vidCb(const sensor_msgs::ImageConstPtr img) {
-
   if (!haveCalib) return;
 
   cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);

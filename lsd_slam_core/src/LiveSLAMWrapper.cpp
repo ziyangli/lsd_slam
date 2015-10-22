@@ -21,6 +21,8 @@
 #include <iostream>
 #include <vector>
 
+#include <ros/ros.h>
+
 #include "LiveSLAMWrapper.h"
 #include "util/SophusUtil.h"
 
@@ -81,14 +83,14 @@ void LiveSLAMWrapper::Loop() {
 
   while (true) {
 
-    boost::unique_lock<boost::recursive_mutex> waitLock(inputStream->getImgBuffer()->getMutex());
+    boost::unique_lock<boost::recursive_mutex> imgLock(inputStream->getImgBuffer()->getMutex());
 
     // wait for an image
     while (!fullResetRequested &&
            !(inputStream->getImgBuffer()->size() > 0)) {
-      notifyCondition.wait(waitLock);
+      notifyCondition.wait(imgLock);
     }
-    waitLock.unlock();
+    imgLock.unlock();
 
     if (fullResetRequested) {
       resetAll();
@@ -100,6 +102,22 @@ void LiveSLAMWrapper::Loop() {
     // no need to lock first???
     TimestampedMat image = inputStream->getImgBuffer()->first();
     inputStream->getImgBuffer()->popFront();
+
+    // sleep to wait odom
+    usleep(1000);
+
+    boost::unique_lock<boost::recursive_mutex> poseLock(inputStream->getPoseBuffer()->getMutex());
+    // world_R_cam
+    while (!(inputStream->getPoseBuffer()->size() > 0)) {
+      ROS_WARN("wait for odom\n");
+      notifyCondition.wait(poseLock);
+    }
+    poseLock.unlock();
+    TimestampedPose pose = inputStream->getPoseBuffer()->first();
+    inputStream->getPoseBuffer()->popFront();
+
+    if (pose.timestamp.toSec() - image.timestamp.toSec() > 0.01 || pose.timestamp.toSec() < image.timestamp.toSec())
+      ROS_WARN("time diff too much %f %f", image.timestamp.toSec(), pose.timestamp.toSec());
 
     // process image
     // Util::displayImage("MyVideo", image.data);
