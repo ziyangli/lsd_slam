@@ -24,6 +24,8 @@
 #include <fstream>
 #include <chrono>
 
+#include <geometry_msgs/Pose.h>
+
 #include "IOWrapper/InputStream.h"
 
 #include "util/SophusUtil.h"
@@ -59,7 +61,7 @@ struct LiveSLAMWrapper : public Notifiable {
   void resetAll();
 
   /** Callback function for new RGB images. */
-  void newImageCallback(const cv::Mat& img, Timestamp imgTime);
+  void newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& pose, Timestamp imgTime);
 
   /** Writes the given time and pose to the outFile. */
   void logCameraPose(const SE3& camToWorld, double time);

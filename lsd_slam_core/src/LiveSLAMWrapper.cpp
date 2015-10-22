@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <ros/ros.h>
+#include <geometry_msgs/Pose.h>
 
 #include "LiveSLAMWrapper.h"
 #include "util/SophusUtil.h"
@@ -121,11 +122,11 @@ void LiveSLAMWrapper::Loop() {
 
     // process image
     // Util::displayImage("MyVideo", image.data);
-    newImageCallback(image.data, image.timestamp);
+    newImageCallback(image.data, pose.data, image.timestamp);
   }
 }
 
-void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime) {
+void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& pose, Timestamp imgTime) {
 
   imageSeqNumber++;
 
