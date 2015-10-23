@@ -531,6 +531,7 @@ void Frame::buildImage(int level) {
     data.imageValid[level] = true;
     return;
   }
+
 #elif defined(ENABLE_NEON)
   // I assume all all subsampled width's are a multiple of 8.
   // if this is not the case, this still works except for the last * pixel, which will produce a segfault.

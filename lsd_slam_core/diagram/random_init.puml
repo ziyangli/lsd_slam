@@ -2,56 +2,55 @@
 skinparam dpi 150
 hide footbox
 
-control currentKeyFrameMutex
 entity currentKeyFrame
 box "SlamSystem::randomInit"
-participant currentKeyFrameMutex
-participant currentKeyFrame
 participant slamNode
+participant currentKeyFrame
 end box
 
-control activeKeyFramelock
 box "DepthMap::initializeRandomly"
 participant map
-participant activeKeyFramelock
 end box
 
-slamNode -> currentKeyFrameMutex : lock
-activate currentKeyFrameMutex
+slamNode -> slamNode : lock\n//**currentKeyFrameMutex**//
+activate slamNode #FFBBBB
+
+slamNode --> currentKeyFrame : //**image**//
 
 currentKeyFrame -> currentKeyFrame: //reset()//\nwith newed **Frame**
 activate currentKeyFrame
 deactivate currentKeyFrame
 
-slamNode -> map: init randomly
+currentKeyFrame --> map : //**currentKeyFrame**//
+map -> currentKeyFrame : //getActiveLock()//
+activate currentKeyFrame #FFBBBB
 
-map -> activeKeyFramelock : lock
-activate activeKeyFramelock
+currentKeyFrame --> map : //**activeMutex**//
 
-map <-- currentKeyFrame : //**activeKeyFrame**//\n//**activeKeyFrameImageData**//
+map --> map : //**activeKeyFramelock**//\n//**activeKeyFrame**//\n//**activeKeyFrameImageData**//
+map -> currentKeyFrame : //maxGradients()//
 
-currentKeyFrame -> currentKeyFrame : //maxGradients()//\ninit. all frame-hosted buffers
 activate currentKeyFrame
-currentKeyFrame --> map: gradients
+
+currentKeyFrame -> currentKeyFrame : //buildImage()//\n//buildGradients//\n//buildMaxGradients()//\nfor all pry. level
+
 deactivate currentKeyFrame
 
-map -> map : init. \n//**currentDepthMap**//\nfor big gradients
+currentKeyFrame --> map : //**maxGradients**//
+
 activate map
-map --> currentKeyFrame : //currentDepthMap//
+map -> map : init. \n//**currentDepthMap**//\nfor big gradients
 deactivate map
+map --> currentKeyFrame : //**currentDepthMap**//
 
 currentKeyFrame -> currentKeyFrame : //setDepth()//
 activate currentKeyFrame
+
+deactivate currentKeyFrame
 deactivate currentKeyFrame
 
-map <-- activeKeyFramelock : unlock
-deactivate activeKeyFramelock
-
-
-
-
-slamNode --> currentKeyFrameMutex : unlock
-deactivate currentKeyFrameMutex
+slamNode -> slamNode : unlock
+deactivate slamNode
 
 
 @enduml

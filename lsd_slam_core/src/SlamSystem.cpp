@@ -849,7 +849,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
   printf("Done Random initialization!\n");
 }
 
-void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp) {
+void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_msgs::Pose& pose, bool blockUntilMapped, double timestamp) {
 
   // Create new frame
   std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));

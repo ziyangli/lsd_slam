@@ -148,7 +148,7 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::
   }
   else if (isInitialized && monoOdometry != nullptr) {
     monoOdometry->trackFrame(
-        grayImg.data, imageSeqNumber, false, imgTime.toSec());
+        grayImg.data, imageSeqNumber, pose, false, imgTime.toSec());
   }
 }
 

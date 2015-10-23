@@ -48,11 +48,11 @@ set(CMAKE_CXX_FLAGS
 
 # Set source files
 set(lsd_SOURCE_FILES
+  ${PROJECT_SOURCE_DIR}/src/SlamSystem.cpp
+  ${PROJECT_SOURCE_DIR}/src/LiveSLAMWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/DataStructures/Frame.cpp
   ${PROJECT_SOURCE_DIR}/src/DataStructures/FramePoseStruct.cpp
   ${PROJECT_SOURCE_DIR}/src/DataStructures/FrameMemory.cpp
-  ${PROJECT_SOURCE_DIR}/src/SlamSystem.cpp
-  ${PROJECT_SOURCE_DIR}/src/LiveSLAMWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/DepthEstimation/DepthMap.cpp
   ${PROJECT_SOURCE_DIR}/src/DepthEstimation/DepthMapPixelHypothesis.cpp
   ${PROJECT_SOURCE_DIR}/src/util/globalFuncs.cpp
@@ -74,7 +74,6 @@ set(SOURCE_FILES
   ${lsd_SOURCE_FILES}
 
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/ROS/ROSInputStreamThread.cpp
-
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/ROS/ROSOutput3DWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
   )
@@ -105,8 +104,8 @@ rosbuild_link_boost(lsdslam thread)
 rosbuild_add_executable(live_slam src/main_live_odometry.cpp)
 target_link_libraries(live_slam lsdslam)
 
-# build image node
-rosbuild_add_executable(dataset_slam src/main_on_images.cpp)
-target_link_libraries(dataset_slam lsdslam)
+# # build image node
+# rosbuild_add_executable(dataset_slam src/main_on_images.cpp)
+# target_link_libraries(dataset_slam lsdslam)
 
 rosbuild_add_executable(tf_node src/tf_listener.cpp)
