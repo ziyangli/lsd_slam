@@ -2,6 +2,7 @@
 
 #include <ros/callback_queue.h>
 #include <cv_bridge/cv_bridge.h>
+#include <geometry_msgs/Transform.h>
 #include <sensor_msgs/image_encodings.h>
 
 #include "ROSInputStreamThread.h"
@@ -22,7 +23,7 @@ ROSInputStreamThread::ROSInputStreamThread() {
 
   // imagebuffer
   imageBuffer = new NotifyBuffer<TimestampedMat>(8);
-  poseBuffer  = new NotifyBuffer<TimestampedPose>(100);
+  poseBuffer  = new NotifyBuffer<TimestampedTFMsg>(100);
 
   undistorter = 0;
   lastSEQ     = 0;
@@ -45,20 +46,19 @@ void ROSInputStreamThread::operator()() {
   exit(0);
 }
 
-
 void ROSInputStreamThread::odomCb(const nav_msgs::OdometryConstPtr odom) {
-  TimestampedPose bufferItem;
+  TimestampedTFMsg bufferItem;
   bufferItem.timestamp = Timestamp(odom->header.stamp.toSec());
 
-  geometry_msgs::Pose pose;
-  pose.position.x = odom->pose.pose.position.x;
-  pose.position.y = odom->pose.pose.position.y;
-  pose.position.z = odom->pose.pose.position.z;
+  geometry_msgs::Transform pose;
+  pose.translation.x = odom->pose.pose.position.x;
+  pose.translation.y = odom->pose.pose.position.y;
+  pose.translation.z = odom->pose.pose.position.z;
 
-  pose.orientation.x = odom->pose.pose.orientation.x;
-  pose.orientation.y = odom->pose.pose.orientation.y;
-  pose.orientation.z = odom->pose.pose.orientation.z;
-  pose.orientation.w = odom->pose.pose.orientation.w;
+  pose.rotation.x    = odom->pose.pose.orientation.x;
+  pose.rotation.y    = odom->pose.pose.orientation.y;
+  pose.rotation.z    = odom->pose.pose.orientation.z;
+  pose.rotation.w    = odom->pose.pose.orientation.w;
 
   bufferItem.data = pose;
 

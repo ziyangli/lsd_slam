@@ -24,26 +24,26 @@ class InputStream {
     return imageBuffer;
   };
 
-  inline NotifyBuffer<TimestampedPose>* getPoseBuffer() {
+  inline NotifyBuffer<TimestampedTFMsg>* getPoseBuffer() {
     return poseBuffer;
   }
 
   /**
    * Gets the Camera Calibration. To avoid any dependencies, just as simple float / int's.
    */
-  inline float fx() {return fx_;}
-  inline float fy() {return fy_;}
-  inline float cx() {return cx_;}
-  inline float cy() {return cy_;}
-  inline int width() {return width_;}
-  inline int height() {return height_;}
+  inline float fx()   { return fx_;     }
+  inline float fy()   { return fy_;     }
+  inline float cx()   { return cx_;     }
+  inline float cy()   { return cy_;     }
+  inline int width()  { return width_;  }
+  inline int height() { return height_; }
 
  protected:
   float fx_, fy_, cx_, cy_;
   int width_, height_;
 
-  NotifyBuffer<TimestampedMat>* imageBuffer;
-  NotifyBuffer<TimestampedPose>* poseBuffer;
+  NotifyBuffer<TimestampedMat>*   imageBuffer;
+  NotifyBuffer<TimestampedTFMsg>* poseBuffer;
 };
 
 }

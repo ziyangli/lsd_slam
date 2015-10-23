@@ -791,7 +791,7 @@ bool SlamSystem::doMappingIteration() {
   }
 }
 
-void SlamSystem::randomInit(uchar* image, const geometry_msgs::Pose& vin_Pose_cam, double timeStamp, int id) {
+void SlamSystem::randomInit(uchar* image, const geometry_msgs::Transform& vin_Pose_cam, double timeStamp, int id) {
 
   printf("Doing Random initialization!\n");
 
@@ -824,7 +824,7 @@ void SlamSystem::randomInit(uchar* image, const geometry_msgs::Pose& vin_Pose_ca
   printf("Done Random initialization!\n");
 }
 
-void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_msgs::Pose& pose, bool blockUntilMapped, double timestamp) {
+void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_msgs::Transform& pose, bool blockUntilMapped, double timestamp) {
 
   // Create new frame
   std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image, pose));

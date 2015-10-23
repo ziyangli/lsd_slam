@@ -22,7 +22,7 @@
 #include <vector>
 
 #include <ros/ros.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Transform.h>
 
 #include "LiveSLAMWrapper.h"
 #include "util/SophusUtil.h"
@@ -114,7 +114,7 @@ void LiveSLAMWrapper::Loop() {
       notifyCondition.wait(poseLock);
     }
     poseLock.unlock();
-    TimestampedPose vin_Pose_cam = inputStream->getPoseBuffer()->first();
+    TimestampedTFMsg vin_Pose_cam = inputStream->getPoseBuffer()->first();
     inputStream->getPoseBuffer()->popFront();
 
     if (vin_Pose_cam.timestamp.toSec() - image.timestamp.toSec() > 0.01 || vin_Pose_cam.timestamp.toSec() < image.timestamp.toSec())
@@ -126,7 +126,7 @@ void LiveSLAMWrapper::Loop() {
   }
 }
 
-void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& vin_Pose_cam, Timestamp imgTime) {
+void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::Transform& vin_Pose_cam, Timestamp imgTime) {
 
   imageSeqNumber++;
 

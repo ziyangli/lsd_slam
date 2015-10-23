@@ -21,11 +21,11 @@
 #ifndef _TIME_STAMPED_OBJECT_HPP_
 #define _TIME_STAMPED_OBJECT_HPP_
 
-#include <chrono>
 #include <opencv2/core/core.hpp>
-#include <geometry_msgs/Pose.h>
 
-#include "IOWrapper/Timestamp.h"
+#include <geometry_msgs/Transform.h>
+
+#include "Timestamp.h"
 
 namespace lsd_slam {
 
@@ -36,8 +36,7 @@ struct TimestampedObject {
 };
 
 typedef TimestampedObject<cv::Mat> TimestampedMat;
-
-typedef TimestampedObject<geometry_msgs::Pose> TimestampedPose;
+typedef TimestampedObject<geometry_msgs::Transform> TimestampedTFMsg;
 
 }
 

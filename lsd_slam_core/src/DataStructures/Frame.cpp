@@ -18,6 +18,9 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <tf/tf.h>
+#include <geometry_msgs/Transform.h>
+
 #include "Frame.h"
 #include "FrameMemory.h"
 #include "DepthEstimation/DepthMapPixelHypothesis.h"
@@ -27,7 +30,7 @@ namespace lsd_slam {
 
 int privateFrameAllocCount = 0;
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const geometry_msgs::Pose& vin_Pose_cam) {
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const geometry_msgs::Transform& vin_Pose_cam) {
 
   initialize(id, width, height, K, timestamp, vin_Pose_cam);
 
@@ -52,21 +55,6 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
     printf("ALLOCATED frame %d, now there are %d\n",
            this->id(), privateFrameAllocCount);
 }
-
-// Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image) {
-
-//   initialize(id, width, height, K, timestamp);
-
-//   data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-//   memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
-//   data.imageValid[0] = true;
-
-//   privateFrameAllocCount++;
-
-//   if (enablePrintDebugInfo && printMemoryDebugInfo)
-//     printf("ALLOCATED frame %d, now there are %d\n",
-//            this->id(), privateFrameAllocCount);
-// }
 
 Frame::~Frame() {
 
@@ -362,9 +350,17 @@ bool Frame::minimizeInMemory() {
   return false;
 }
 
-void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const geometry_msgs::Pose& vin_Pose_cam) {
+void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const geometry_msgs::Transform& vin_Pose_cam) {
+
+  const tf::Matrix3x3 lsd_R_vin(0, -1, 0, 0, 0, -1, 1, 0, 0);
+  const tf::Transform lsd_TF_vin(lsd_R_vin, tf::Vector3(0, 0, 0));
+
+  // tf::transform
+  // tf::Transform vin_TF_cam(vin_Pose_cam.position)
 
   data.id                 = id;
+
+
 
   pose                    = new FramePoseStruct(this);
 
