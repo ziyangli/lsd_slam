@@ -18,8 +18,8 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DataStructures/Frame.h"
-#include "DataStructures/FrameMemory.h"
+#include "Frame.h"
+#include "FrameMemory.h"
 #include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "Tracking/TrackingReference.h"
 
@@ -27,12 +27,9 @@ namespace lsd_slam {
 
 int privateFrameAllocCount = 0;
 
-Frame::Frame(
-    int id, int width, int height,
-    const Eigen::Matrix3f& K,
-    double timestamp,
-    const unsigned char* image) {
-  initialize(id, width, height, K, timestamp);
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const geometry_msgs::Pose& vin_Pose_cam) {
+
+  initialize(id, width, height, K, timestamp, vin_Pose_cam);
 
   data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 
@@ -56,23 +53,20 @@ Frame::Frame(
            this->id(), privateFrameAllocCount);
 }
 
-Frame::Frame(
-    int id, int width, int height,
-    const Eigen::Matrix3f& K,
-    double timestamp,
-    const float* image) {
-  initialize(id, width, height, K, timestamp);
+// Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image) {
 
-  data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-  memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
-  data.imageValid[0] = true;
+//   initialize(id, width, height, K, timestamp);
 
-  privateFrameAllocCount++;
+//   data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+//   memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
+//   data.imageValid[0] = true;
 
-  if (enablePrintDebugInfo && printMemoryDebugInfo)
-    printf("ALLOCATED frame %d, now there are %d\n",
-           this->id(), privateFrameAllocCount);
-}
+//   privateFrameAllocCount++;
+
+//   if (enablePrintDebugInfo && printMemoryDebugInfo)
+//     printf("ALLOCATED frame %d, now there are %d\n",
+//            this->id(), privateFrameAllocCount);
+// }
 
 Frame::~Frame() {
 
@@ -368,13 +362,13 @@ bool Frame::minimizeInMemory() {
   return false;
 }
 
-void Frame::initialize(
-    int id, int width, int height,
-    const Eigen::Matrix3f& K, double timestamp) {
+void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const geometry_msgs::Pose& vin_Pose_cam) {
 
   data.id                 = id;
 
   pose                    = new FramePoseStruct(this);
+
+  lastConstraintTrackedCamToWorld = Sim3();
 
   data.K[0]               = K;
   data.fx[0]              = K(0, 0);
@@ -459,8 +453,6 @@ void Frame::initialize(
 
   edgeErrorSum             = 1;
   edgesNum                 = 1;
-
-  lastConstraintTrackedCamToWorld = Sim3();
 
   isActive                 = false;
 }

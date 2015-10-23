@@ -61,7 +61,7 @@ struct LiveSLAMWrapper : public Notifiable {
   void resetAll();
 
   /** Callback function for new RGB images. */
-  void newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& pose, Timestamp imgTime);
+  void newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& vin_Pose_cam, Timestamp imgTime);
 
   /** Writes the given time and pose to the outFile. */
   void logCameraPose(const SE3& camToWorld, double time);

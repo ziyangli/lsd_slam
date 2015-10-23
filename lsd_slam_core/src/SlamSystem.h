@@ -73,8 +73,8 @@ class SlamSystem {
   SlamSystem& operator=(const SlamSystem&) = delete;
   ~SlamSystem();
 
-  void randomInit(uchar* image, double timeStamp, int id);
-  void gtDepthInit(uchar* image, float* depth, double timeStamp, int id);
+  void randomInit(uchar* image, const geometry_msgs::Pose& vin_Pose_cam, double timeStamp, int id);
+  // void gtDepthInit(uchar* image, float* depth, double timeStamp, int id);
 
   // tracks a frame.
   // first frame will return Identity = camToWord.

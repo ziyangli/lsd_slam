@@ -791,32 +791,7 @@ bool SlamSystem::doMappingIteration() {
   }
 }
 
-void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int id) {
-  printf("Doing GT initialization!\n");
-
-  currentKeyFrameMutex.lock();
-
-  currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image));
-  currentKeyFrame->setDepthFromGroundTruth(depth);
-
-  map->initializeFromGTDepth(currentKeyFrame.get());
-  keyFrameGraph->addFrame(currentKeyFrame.get());
-
-  currentKeyFrameMutex.unlock();
-
-  if (doSlam) {
-    keyFrameGraph->idToKeyFrameMutex.lock();
-    keyFrameGraph->idToKeyFrame.insert(std::make_pair(currentKeyFrame->id(), currentKeyFrame));
-    keyFrameGraph->idToKeyFrameMutex.unlock();
-  }
-
-  if (continuousPCOutput && outputWrapper != 0)
-    outputWrapper->publishKeyframe(currentKeyFrame.get());
-
-  printf("Done GT initialization!\n");
-}
-
-void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
+void SlamSystem::randomInit(uchar* image, const geometry_msgs::Pose& vin_Pose_cam, double timeStamp, int id) {
 
   printf("Doing Random initialization!\n");
 
@@ -825,7 +800,7 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
 
   currentKeyFrameMutex.lock();
 
-  currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image));
+  currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image, vin_Pose_cam));
 
   map->initializeRandomly(currentKeyFrame.get());
 
@@ -852,12 +827,11 @@ void SlamSystem::randomInit(uchar* image, double timeStamp, int id) {
 void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_msgs::Pose& pose, bool blockUntilMapped, double timestamp) {
 
   // Create new frame
-  std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image));
+  std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, image, pose));
 
   if (!trackingIsGood) {
     relocalizer.updateCurrentFrame(trackingNewFrame);
 
-    // by zli: what does this mean?
     unmappedTrackedFramesMutex.lock();
     unmappedTrackedFramesSignal.notify_one();
     unmappedTrackedFramesMutex.unlock();
@@ -1588,3 +1562,28 @@ SE3 SlamSystem::getCurrentPoseEstimate() {
 std::vector<FramePoseStruct*, Eigen::aligned_allocator<FramePoseStruct*> > SlamSystem::getAllPoses() {
   return keyFrameGraph->allFramePoses;
 }
+
+// void SlamSystem::gtDepthInit(uchar* image, float* depth, double timeStamp, int id) {
+//   printf("Doing GT initialization!\n");
+
+//   currentKeyFrameMutex.lock();
+
+//   currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, image));
+//   currentKeyFrame->setDepthFromGroundTruth(depth);
+
+//   map->initializeFromGTDepth(currentKeyFrame.get());
+//   keyFrameGraph->addFrame(currentKeyFrame.get());
+
+//   currentKeyFrameMutex.unlock();
+
+//   if (doSlam) {
+//     keyFrameGraph->idToKeyFrameMutex.lock();
+//     keyFrameGraph->idToKeyFrame.insert(std::make_pair(currentKeyFrame->id(), currentKeyFrame));
+//     keyFrameGraph->idToKeyFrameMutex.unlock();
+//   }
+
+//   if (continuousPCOutput && outputWrapper != 0)
+//     outputWrapper->publishKeyframe(currentKeyFrame.get());
+
+//   printf("Done GT initialization!\n");
+// }

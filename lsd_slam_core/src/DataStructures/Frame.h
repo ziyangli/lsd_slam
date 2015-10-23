@@ -25,11 +25,13 @@
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
+#include <geometry_msgs/Pose.h>
+
+#include "FramePoseStruct.h"
+#include "FrameMemory.h"
+
 #include "util/SophusUtil.h"
 #include "util/settings.h"
-
-#include "DataStructures/FramePoseStruct.h"
-#include "DataStructures/FrameMemory.h"
 
 namespace lsd_slam {
 
@@ -44,9 +46,9 @@ class Frame {
 
   friend class FrameMemory;
 
-  Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image);
+  Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const geometry_msgs::Pose& vin_Pose_cam);
 
-  Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image);
+  // Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image);
 
   ~Frame();
 
@@ -202,7 +204,8 @@ class Frame {
   void require(int dataFlags, int level = 0);
   void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
 
-  void initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp);
+  void initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const geometry_msgs::Pose& vin_Pose_cam);
+
   void setDepth_Allocate();
 
   void buildImage(int level);

@@ -37,6 +37,7 @@ FramePoseStruct::FramePoseStruct(Frame* frame) {
   this->graphVertex   = nullptr;
   this->frame         = frame;
   frameID             = frame->id();
+
   thisToParent_raw = camToWorld = camToWorld_new = Sim3();
 
   privateFramePoseStructAllocCount++;

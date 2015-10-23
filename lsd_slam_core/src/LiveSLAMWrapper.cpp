@@ -114,19 +114,19 @@ void LiveSLAMWrapper::Loop() {
       notifyCondition.wait(poseLock);
     }
     poseLock.unlock();
-    TimestampedPose pose = inputStream->getPoseBuffer()->first();
+    TimestampedPose vin_Pose_cam = inputStream->getPoseBuffer()->first();
     inputStream->getPoseBuffer()->popFront();
 
-    if (pose.timestamp.toSec() - image.timestamp.toSec() > 0.01 || pose.timestamp.toSec() < image.timestamp.toSec())
-      ROS_WARN("time diff too much %f %f", image.timestamp.toSec(), pose.timestamp.toSec());
+    if (vin_Pose_cam.timestamp.toSec() - image.timestamp.toSec() > 0.01 || vin_Pose_cam.timestamp.toSec() < image.timestamp.toSec())
+      ROS_WARN("time diff too much %f %f", image.timestamp.toSec(), vin_Pose_cam.timestamp.toSec());
 
     // process image
     // Util::displayImage("MyVideo", image.data);
-    newImageCallback(image.data, pose.data, image.timestamp);
+    newImageCallback(image.data, vin_Pose_cam.data, image.timestamp);
   }
 }
 
-void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& pose, Timestamp imgTime) {
+void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::Pose& vin_Pose_cam, Timestamp imgTime) {
 
   imageSeqNumber++;
 
@@ -143,12 +143,12 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::
 
   // need to initialize
   if (!isInitialized) {
-    monoOdometry->randomInit(grayImg.data, imgTime.toSec(), 1);
+    monoOdometry->randomInit(grayImg.data, vin_Pose_cam, imgTime.toSec(), 1);
     isInitialized = true;
   }
   else if (isInitialized && monoOdometry != nullptr) {
     monoOdometry->trackFrame(
-        grayImg.data, imageSeqNumber, pose, false, imgTime.toSec());
+        grayImg.data, imageSeqNumber, vin_Pose_cam, false, imgTime.toSec());
   }
 }
 

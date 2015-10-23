@@ -2,13 +2,11 @@
 skinparam dpi 150
 hide footbox
 
-control currentKeyFrameMutex
 control poseConsistencyMutex
 entity trackingNewFrame
 entity trackingReference
 entity currentKeyFrame
 box "SlamSystem::trackFrame"
-participant currentKeyFrameMutex
 participant trackingNewFrame
 participant trackingReference
 participant slamNode
@@ -20,15 +18,17 @@ box "SE3Tracker::trackFrame"
 participant tracker
 end box
 
+slamNode --> trackingNewFrame : //**image**//
+
 trackingNewFrame -> trackingNewFrame: init. with\nnewed **Frame**
 activate trackingNewFrame
 deactivate trackingNewFrame
 
-slamNode -> currentKeyFrameMutex : lock
-activate currentKeyFrameMutex
+slamNode -> slamNode : lock\n//**currentKeyFrameMutex**//
+activate slamNode #FFBBBB
 
 alt update trackingReference
-slamNode -> trackingReference : //**currentKeyFrame**//
+slamNode --> trackingReference : //**currentKeyFrame**//
 trackingReference -> trackingReference : //importFrame()//
 activate trackingReference
 
@@ -42,8 +42,8 @@ deactivate trackingReference
 
 end
 
-slamNode --> currentKeyFrameMutex : unlock
-deactivate currentKeyFrameMutex
+slamNode -> slamNode : unlock
+deactivate slamNode
 
 slamNode -> poseConsistencyMutex : //lock_shared()//
 activate poseConsistencyMutex
