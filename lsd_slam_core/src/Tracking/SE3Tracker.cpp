@@ -256,9 +256,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
-SE3 SE3Tracker::trackFrame(
-    TrackingReference* reference, Frame* frame,
-    const SE3& frameToReference_initialEstimate) {
+SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate) {
 
   // lock current frame
   boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();

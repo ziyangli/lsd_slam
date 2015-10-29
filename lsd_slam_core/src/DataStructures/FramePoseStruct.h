@@ -33,7 +33,7 @@ class FramePoseStruct {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  FramePoseStruct(Frame* frame);
+  FramePoseStruct(Frame* frame, const Sim3& cam_pose);
   virtual ~FramePoseStruct();
 
   // parent, the frame originally tracked on. never changes.
@@ -41,7 +41,7 @@ class FramePoseStruct {
 
   // set initially as tracking result (then it's a SE(3)),
   // and is changed only once, when the frame becomes a KF (->rescale)
-  Sim3 thisToParent_raw;
+  Sim3   thisToParent_raw;
 
   int    frameID;
   Frame* frame;

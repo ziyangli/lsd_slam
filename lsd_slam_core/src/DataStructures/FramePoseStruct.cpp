@@ -18,8 +18,8 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DataStructures/Frame.h"
-#include "DataStructures/FramePoseStruct.h"
+#include "Frame.h"
+#include "FramePoseStruct.h"
 
 namespace lsd_slam {
 
@@ -27,7 +27,7 @@ int privateFramePoseStructAllocCount   = 0;
 
 int FramePoseStruct::cacheValidCounter = 0;
 
-FramePoseStruct::FramePoseStruct(Frame* frame) {
+FramePoseStruct::FramePoseStruct(Frame* frame, const Sim3& cam_pose) {
   cacheValidFor       = -1;
   isOptimized         = false;
   isRegisteredToGraph = false;
@@ -38,7 +38,9 @@ FramePoseStruct::FramePoseStruct(Frame* frame) {
   this->frame         = frame;
   frameID             = frame->id();
 
-  thisToParent_raw = camToWorld = camToWorld_new = Sim3();
+  thisToParent_raw    = Sim3();
+  camToWorld          = cam_pose;
+  camToWorld_new      = cam_pose;
 
   privateFramePoseStructAllocCount++;
 
@@ -92,7 +94,7 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth) {
     return camToWorld = Sim3();
 
   // abs. pose is computed from the parent's abs. pose, and cached.
-  cacheValidFor = cacheValidCounter;
+  cacheValidFor     = cacheValidCounter;
 
   return camToWorld = trackingParent->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 }

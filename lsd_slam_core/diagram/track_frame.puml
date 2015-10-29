@@ -2,7 +2,6 @@
 skinparam dpi 150
 hide footbox
 
-control poseConsistencyMutex
 entity trackingNewFrame
 entity trackingReference
 entity currentKeyFrame
@@ -11,7 +10,6 @@ participant trackingNewFrame
 participant trackingReference
 participant slamNode
 participant currentKeyFrame
-participant poseConsistencyMutex
 end box
 
 box "SE3Tracker::trackFrame"
@@ -27,40 +25,35 @@ deactivate trackingNewFrame
 slamNode -> slamNode : lock\n//**currentKeyFrameMutex**//
 activate slamNode #FFBBBB
 
-alt update trackingReference
+alt //**currentKeyFrame**// updated
 slamNode --> trackingReference : //**currentKeyFrame**//
 trackingReference -> trackingReference : //importFrame()//
 activate trackingReference
-
 trackingReference -> currentKeyFrame : lock
 activate currentKeyFrame
 currentKeyFrame --> trackingReference : //**frameID**//\n//**keyframe**//
 trackingReference --> currentKeyFrame : unlock
 deactivate currentKeyFrame
-
 deactivate trackingReference
-
 end
+
+trackingReference --> slamNode : pose
+slamNode --> slamNode : //**trackingReferencePose**//
 
 slamNode -> slamNode : unlock
 deactivate slamNode
 
-slamNode -> poseConsistencyMutex : //lock_shared()//
-activate poseConsistencyMutex
+slamNode -> slamNode : //lock_shared()//\n//**poseConsistencyMutex**//
+activate slamNode #FFBBBB
 
-slamNode -> slamNode : //R_{ref}_{trk}//
-activate slamNode
+slamNode --> slamNode : //R_{ref}_{trk}//
 deactivate slamNode
-
-slamNode --> poseConsistencyMutex : //unlock_shared()//
-
-deactivate poseConsistencyMutex
 
 slamNode -> tracker : frame, keyframe, R_init
 tracker -> trackingNewFrame : shared_lock
 activate trackingNewFrame
 
-tracker -> trackingReference
+tracker -[#0000FF]-> trackingReference
 trackingReference -> trackingReference : //makePointCloud()//
 activate trackingReference
 trackingReference --> tracker: **posData**\n**pointPosInXYGrid**\n**gradData**\n**colorAndVarData**\n**numData**

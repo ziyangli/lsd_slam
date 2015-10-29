@@ -865,7 +865,7 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
   // by zli: ref: keyframe yet not finalized
   SE3 frameToReference_initialEstimate = se3FromSim3(
       trackingReferencePose->getCamToWorld().inverse() *
-      keyFrameGraph->allFramePoses.back()->getCamToWorld());
+      keyFrameGraph->allFramePoses.back()->getCamToWorld()); /* zli: seems to be the previous tracked frame */
   poseConsistencyMutex.unlock_shared();
 
   struct timeval tv_start, tv_end;

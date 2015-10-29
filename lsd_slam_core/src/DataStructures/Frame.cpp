@@ -19,7 +19,10 @@
  */
 
 #include <tf/tf.h>
+#include <tf_conversions/tf_eigen.h>
+
 #include <geometry_msgs/Transform.h>
+#include <eigen3/Eigen/Core>
 
 #include "Frame.h"
 #include "FrameMemory.h"
@@ -63,7 +66,7 @@ Frame::~Frame() {
 
   FrameMemory::getInstance().deactivateFrame(this);
 
-  if(!pose->isRegisteredToGraph)
+  if (!pose->isRegisteredToGraph)
     delete pose;
   else
     pose->frame = 0;
@@ -80,13 +83,13 @@ Frame::~Frame() {
   FrameMemory::getInstance().returnBuffer(data.idepth_reAct);
   FrameMemory::getInstance().returnBuffer(data.idepthVar_reAct);
 
-  if(permaRef_colorAndVarData != 0)
+  if (permaRef_colorAndVarData != 0)
     delete permaRef_colorAndVarData;
-  if(permaRef_posData != 0)
+  if (permaRef_posData != 0)
     delete permaRef_posData;
 
   privateFrameAllocCount--;
-  if(enablePrintDebugInfo && printMemoryDebugInfo)
+  if (enablePrintDebugInfo && printMemoryDebugInfo)
     printf("DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
@@ -352,19 +355,29 @@ bool Frame::minimizeInMemory() {
 
 void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const geometry_msgs::Transform& vin_Pose_cam) {
 
-  const tf::Matrix3x3 lsd_R_vin(0, -1, 0, 0, 0, -1, 1, 0, 0);
-  const tf::Transform lsd_TF_vin(lsd_R_vin, tf::Vector3(0, 0, 0));
+  tf::Transform vin_TF_cam;
+  tf::transformMsgToTF(vin_Pose_cam, vin_TF_cam);
 
-  // tf::transform
-  // tf::Transform vin_TF_cam(vin_Pose_cam.position)
+  const tf::Matrix3x3 lsd_R_vin(0, -1, 0, 0, 0, -1, 1, 0, 0);
+  tf::Transform lsd_TF_vin(lsd_R_vin, tf::Vector3(0, 0, 0));
+
+  // from cam. pose to cam. world
+  lsd_TF_vin.mult(lsd_TF_vin, vin_TF_cam);
+
+  Sim3 lsd_Sim3_cam(
+      Eigen::Quaterniond(lsd_TF_vin.getRotation().getW(),
+                        lsd_TF_vin.getRotation().getX(),
+                        lsd_TF_vin.getRotation().getY(),
+                        lsd_TF_vin.getRotation().getZ()),
+      Eigen::Vector3d(lsd_TF_vin.getOrigin().getX(),
+                     lsd_TF_vin.getOrigin().getY(),
+                     lsd_TF_vin.getOrigin().getZ()));
 
   data.id                 = id;
 
+  pose                    = new FramePoseStruct(this, lsd_Sim3_cam);
 
-
-  pose                    = new FramePoseStruct(this);
-
-  lastConstraintTrackedCamToWorld = Sim3();
+  lastConstraintTrackedCamToWorld = lsd_Sim3_cam;
 
   data.K[0]               = K;
   data.fx[0]              = K(0, 0);

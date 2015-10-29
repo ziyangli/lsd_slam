@@ -21,6 +21,8 @@
 // IN THE SOFTWARE.
 
 #ifndef SOPHUS_RXSO3_HPP
+#define SOPHUS_RXSO3_HPP
+
 #define RXSO3_HPP
 
 #include "sophus.hpp"
