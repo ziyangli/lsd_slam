@@ -256,9 +256,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
-SE3 SE3Tracker::trackFrame(
-    TrackingReference* reference, Frame* frame,
-    const SE3& frameToReference_initialEstimate) {
+SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate) {
 
   // lock current frame
   boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
@@ -302,7 +300,7 @@ SE3 SE3Tracker::trackFrame(
     callOptimized(calcResidualAndBuffers,
                   (reference->posData[lvl],
                    reference->colorAndVarData[lvl],
-                   SE3TRACKING_MIN_LEVEL == lvl ?
+                   lvl == SE3TRACKING_MIN_LEVEL ?
                    reference->pointPosInXYGrid[lvl] : 0,  // no track
                    reference->numData[lvl],
                    frame, referenceToFrame, lvl,
@@ -326,8 +324,7 @@ SE3 SE3Tracker::trackFrame(
 
     // LM optimization
     float LM_lambda = settings.lambdaInitial[lvl];
-    for (int iteration = 0;
-         iteration < settings.maxItsPerLvl[lvl]; iteration++) {
+    for (int iteration = 0; iteration < settings.maxItsPerLvl[lvl]; iteration++) {
 
       callOptimized(calculateWarpUpdate, (ls));
 
@@ -339,7 +336,7 @@ SE3 SE3Tracker::trackFrame(
 
       while (true) {
         // solve LS system with current lambda
-        Vector6 b   = - ls.b;
+        Vector6   b = - ls.b;
         Matrix6x6 A =   ls.A;
         for (int i = 0; i < 6; i++)
           A(i,i) *= 1 + LM_lambda;
@@ -411,7 +408,7 @@ SE3 SE3Tracker::trackFrame(
 
           break;
         }
-        else {
+        else {  // error >= lastErr
           if (enablePrintDebugInfo && printTrackingIterationInfo) {
             printf("(%d-%d): REJECTED increment of %f with lambda %.1f, (residual: %f -> %f)\n", lvl, iteration, sqrt(inc.dot(inc)), LM_lambda, lastErr, error);
           }
@@ -424,13 +421,16 @@ SE3 SE3Tracker::trackFrame(
             break;
           }
 
+          // adjust step size and try again
           if (LM_lambda == 0)
             LM_lambda = 0.2;
           else
             LM_lambda *= std::pow(settings.lambdaFailFac, incTry);
         }
       }
+
     }
+
   }
 
   if (plotTracking)
@@ -830,9 +830,7 @@ float SE3Tracker::calcResidualAndBuffersNEON(
 float SE3Tracker::calcResidualAndBuffers(
     const Eigen::Vector3f* refPoint,
     const Eigen::Vector2f* refColVar,
-    int* idxBuf,
-    int refNum,
-    Frame* frame,
+    int* idxBuf, int refNum, Frame* frame,
     const Sophus::SE3f& referenceToFrame,
     int level,
     bool plotResidual) {
@@ -859,10 +857,10 @@ float SE3Tracker::calcResidualAndBuffers(
 
   bool* isGoodOutBuffer  = idxBuf != 0 ? frame->refPixelWasGood() : 0;
 
-  int goodCount      = 0;
-  int badCount       = 0;
+  int goodCount          = 0;
+  int badCount           = 0;
 
-  float sumSignedRes = 0;
+  float sumSignedRes     = 0;
 
   float sxx = 0, syy = 0, sx = 0, sy = 0, sw = 0;
 
@@ -879,7 +877,7 @@ float SE3Tracker::calcResidualAndBuffers(
     // step 1a: coordinates have to be in image:
     // (inverse test to exclude NANs)
     if (!(u_new > 1 && v_new > 1 && u_new < w-2 && v_new < h-2)) {
-      if (isGoodOutBuffer != 0)
+      if (isGoodOutBuffer != nullptr)
         isGoodOutBuffer[*idxBuf] = false;
       continue;
     }
