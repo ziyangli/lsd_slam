@@ -20,21 +20,19 @@
 
 #pragma once
 #include <opencv2/core/core.hpp>
+
 #include "util/settings.h"
 #include "util/EigenCoreInclude.h"
 #include "util/SophusUtil.h"
-#include "Tracking/LGSX.h"
 
+#include "LGSX.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class TrackingReference;
 class Frame;
 
-
-class SE3Tracker
-{
+class SE3Tracker {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -47,7 +45,6 @@ class SE3Tracker
 
   DenseDepthTrackerSettings settings;
 
-
   // debug images
   cv::Mat debugImageResiduals;
   cv::Mat debugImageWeights;
@@ -55,28 +52,18 @@ class SE3Tracker
   cv::Mat debugImageOldImageSource;
   cv::Mat debugImageOldImageWarped;
 
-
   SE3Tracker(int w, int h, Eigen::Matrix3f K);
   SE3Tracker(const SE3Tracker&) = delete;
   SE3Tracker& operator=(const SE3Tracker&) = delete;
   ~SE3Tracker();
 
+  SE3 trackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate);
 
-  SE3 trackFrame(
-      TrackingReference* reference,
-      Frame* frame,
-      const SE3& frameToReference_initialEstimate);
+  SE3 dummyTrackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate);
 
+  SE3 trackFrameOnPermaref(Frame* reference, Frame* frame, SE3 referenceToFrame);
 
-  SE3 trackFrameOnPermaref(
-      Frame* reference,
-      Frame* frame,
-      SE3 referenceToFrame);
-
-
-  float checkPermaRefOverlap(
-      Frame* reference,
-      SE3 referenceToFrame);
+  float checkPermaRefOverlap(Frame* reference, SE3 referenceToFrame);
 
   float pointUsage;
   float lastGoodCount;
@@ -87,12 +74,10 @@ class SE3Tracker
   float affineEstimation_a;
   float affineEstimation_b;
 
-
   bool diverged;
   bool trackingWasGood;
+
  private:
-
-
 
   float* buf_warped_residual;
   float* buf_warped_dx;
@@ -106,7 +91,6 @@ class SE3Tracker
   float* buf_weight_p;
 
   int buf_warped_size;
-
 
   float calcResidualAndBuffers(
       const Eigen::Vector3f* refPoint,
@@ -129,6 +113,7 @@ class SE3Tracker
       int level,
       bool plotResidual = false);
 #endif
+
 #if defined(ENABLE_NEON)
   float calcResidualAndBuffersNEON(
       const Eigen::Vector3f* refPoint,
@@ -141,45 +126,27 @@ class SE3Tracker
       bool plotResidual = false);
 #endif
 
-
-
-
-
-
-  float calcWeightsAndResidual(
-      const Sophus::SE3f& referenceToFrame);
+  float calcWeightsAndResidual(const Sophus::SE3f& referenceToFrame);
 #if defined(ENABLE_SSE)
-  float calcWeightsAndResidualSSE(
-      const Sophus::SE3f& referenceToFrame);
+  float calcWeightsAndResidualSSE(const Sophus::SE3f& referenceToFrame);
 #endif
 #if defined(ENABLE_NEON)
-  float calcWeightsAndResidualNEON(
-      const Sophus::SE3f& referenceToFrame);
+  float calcWeightsAndResidualNEON(const Sophus::SE3f& referenceToFrame);
 #endif
 
-
-
-
-
-
-  void calculateWarpUpdate(
-      LGS6 &ls);
+  void calculateWarpUpdate(LGS6 &ls);
 #if defined(ENABLE_SSE)
-  void calculateWarpUpdateSSE(
-      LGS6 &ls);
+  void calculateWarpUpdateSSE(LGS6 &ls);
 #endif
 #if defined(ENABLE_NEON)
-  void calculateWarpUpdateNEON(
-      LGS6 &ls);
+  void calculateWarpUpdateNEON(LGS6 &ls);
 #endif
 
   void calcResidualAndBuffers_debugStart();
   void calcResidualAndBuffers_debugFinish(int w);
 
-
   // used for image saving
   int iterationNumber;
-
 
   float affineEstimation_a_lastIt;
   float affineEstimation_b_lastIt;

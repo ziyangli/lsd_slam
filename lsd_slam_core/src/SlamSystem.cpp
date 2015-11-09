@@ -900,10 +900,17 @@ void SlamSystem::trackFrame(
 
   //////////////////////////////
   // get R & T
-  SE3 newRefToFrame_poseUpdate = tracker->trackFrame(
+
+  // SE3 newRefToFrame_poseUpdate = tracker->trackFrame(
+  //     trackingReference,
+  //     trackingNewFrame.get(),
+  //     frameToReference_initialEstimate);
+
+  SE3 newRefToFrame_poseUpdate = tracker->dummyTrackFrame(
       trackingReference,
       trackingNewFrame.get(),
       frameToReference_initialEstimate);
+
   //////////////////////////////
 
   gettimeofday(&tv_end, NULL);
@@ -917,8 +924,7 @@ void SlamSystem::trackFrame(
   tracking_lastGoodPerBad   = tracker->lastGoodCount / (tracker->lastGoodCount + tracker->lastBadCount);
   tracking_lastGoodPerTotal = tracker->lastGoodCount / (trackingNewFrame->width(SE3TRACKING_MIN_LEVEL) * trackingNewFrame->height(SE3TRACKING_MIN_LEVEL));
 
-  if (manualTrackingLossIndicated || tracker->diverged ||
-      (keyFrameGraph->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !tracker->trackingWasGood)) {
+  if (manualTrackingLossIndicated || tracker->diverged || (keyFrameGraph->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !tracker->trackingWasGood)) {
     printf("TRACKING LOST for frame %d (%1.2f%% good Points, which is %1.2f%% of available points, %s)!\n",
            trackingNewFrame->id(),
            100*tracking_lastGoodPerTotal,
@@ -953,8 +959,6 @@ void SlamSystem::trackFrame(
   // by zli: why do we need to add a normal frame?
   keyFrameGraph->addFrame(trackingNewFrame.get());
 
-  //Sim3 lastTrackedCamToWorld = mostCurrentTrackedFrame->getScaledCamToWorld();//  mostCurrentTrackedFrame->TrackingParent->getScaledCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
-
   if (outputWrapper != nullptr) {
     outputWrapper->publishTrackedFrame(trackingNewFrame.get());
   }
@@ -975,6 +979,7 @@ void SlamSystem::trackFrame(
 
     // [note] zli: larger dist, less point, higher score
     // [question] zli: can be called even if trackableKeyFrameSearch is null!!!???
+    printf("pointUsage %f\n", tracker->pointUsage);
     lastTrackingClosenessScore = trackableKeyFrameSearch->getRefFrameScore(dist.dot(dist), tracker->pointUsage);
 
     if (lastTrackingClosenessScore > minVal) {

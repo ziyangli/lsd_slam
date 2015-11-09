@@ -18,15 +18,16 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "SE3Tracker.h"
-#include <opencv2/highgui/highgui.hpp>
-#include "DataStructures/Frame.h"
-#include "Tracking/TrackingReference.h"
-#include "util/globalFuncs.h"
-#include "IOWrapper/ImageDisplay.h"
-#include "Tracking/LGSX.h"
-
 #include <Eigen/Core>
+#include <opencv2/highgui/highgui.hpp>
+
+#include "DataStructures/Frame.h"
+#include "IOWrapper/ImageDisplay.h"
+#include "util/globalFuncs.h"
+
+#include "TrackingReference.h"
+#include "SE3Tracker.h"
+#include "LGSX.h"
 
 namespace lsd_slam {
 
@@ -254,10 +255,82 @@ SE3 SE3Tracker::trackFrameOnPermaref(
   return toSophus(referenceToFrame);
 }
 
+SE3 SE3Tracker::dummyTrackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate) {
+
+  printf("ref id %d frame id %d\n", reference->frameID, frame->id());
+  boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
+
+  diverged           = false;
+  trackingWasGood    = true;
+  affineEstimation_a = 1;
+  affineEstimation_b = 0;
+
+  if (saveAllTrackingStages) {
+    saveAllTrackingStages         = false;
+    saveAllTrackingStagesInternal = true;
+  }
+
+  if (plotTrackingIterationInfo) {
+    const float* frameImage = frame->image();
+    for (int row = 0; row < height; ++row)
+      for (int col = 0; col < width; ++col)
+        setPixelInCvMat(&debugImageSecondFrame, getGrayCvPixel(frameImage[col+row*width]), col, row, 1);
+  }
+
+  Sophus::SE3f referenceToFrame = frameToReference_initialEstimate.inverse().cast<float>();
+
+  for (int lvl = SE3TRACKING_MAX_LEVEL - 1; lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
+    reference->makePointCloud(lvl);
+
+    callOptimized(calcResidualAndBuffers,
+                  (reference->posData[lvl],
+                   reference->colorAndVarData[lvl],
+                   lvl == SE3TRACKING_MIN_LEVEL ?
+                   reference->pointPosInXYGrid[lvl] : 0,  // no track
+                   reference->numData[lvl],
+                   frame, referenceToFrame, lvl,
+                   (plotTracking && lvl == SE3TRACKING_MIN_LEVEL)));
+
+    // [note] zli: strong constraint of photoconsistency
+    if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width >> lvl) * (height >> lvl)) {
+      diverged        = true;
+      trackingWasGood = false;
+      return toSophus(referenceToFrame);
+    }
+
+    if (useAffineLightningEstimation) {
+      affineEstimation_a = affineEstimation_a_lastIt;
+      affineEstimation_b = affineEstimation_b_lastIt;
+    }
+
+    lastResidual = callOptimized(calcWeightsAndResidual, (referenceToFrame));
+
+  }
+
+  if (plotTracking)
+    Util::displayImage("TrackingResidual", debugImageResiduals, false);
+
+  saveAllTrackingStagesInternal = false;
+
+  trackingWasGood = !diverged
+                    && lastGoodCount / (frame->width(SE3TRACKING_MIN_LEVEL)*frame->height(SE3TRACKING_MIN_LEVEL)) > MIN_GOODPERALL_PIXEL
+                    && lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
+
+  if (trackingWasGood)
+    reference->keyframe->numFramesTrackedOnThis++;
+
+  frame->initialTrackedResidual = lastResidual / pointUsage;
+  frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()), 1);
+  frame->pose->trackingParent   = reference->keyframe->pose;
+
+  return toSophus(referenceToFrame);
+}
+
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
 SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate) {
 
+  printf("ref id %d frame id %d\n", reference->frameID, frame->id());
   // lock current frame
   boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
 
@@ -275,9 +348,7 @@ SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3
     const float* frameImage = frame->image();
     for (int row = 0; row < height; ++row)
       for (int col = 0; col < width; ++col)
-        setPixelInCvMat(&debugImageSecondFrame,
-                        getGrayCvPixel(frameImage[col+row*width]),
-                        col, row, 1);
+        setPixelInCvMat(&debugImageSecondFrame, getGrayCvPixel(frameImage[col+row*width]), col, row, 1);
   }
 
   // ============ track frame ============
@@ -462,7 +533,8 @@ SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3
   frame->initialTrackedResidual = lastResidual / pointUsage;
   frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()), 1);
   frame->pose->trackingParent   = reference->keyframe->pose;
-  return toSophus(referenceToFrame.inverse());
+  return toSophus(referenceToFrame);
+  // return toSophus(referenceToFrame.inverse());
 }
 
 #if defined(ENABLE_SSE)
@@ -726,7 +798,7 @@ float SE3Tracker::calcWeightsAndResidual(const Sophus::SE3f& referenceToFrame) {
 
     // calc w_p
     float drpdd = gx * g0 + gy * g1;    // ommitting the minus
-    float w_p = 1.0f / ((cameraPixelNoise2) + s * drpdd * drpdd);
+    float w_p   = 1.0f / ((cameraPixelNoise2) + s * drpdd * drpdd);
 
     float weighted_rp = fabs(rp*sqrtf(w_p));
 
