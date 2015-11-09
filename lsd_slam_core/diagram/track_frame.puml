@@ -1,0 +1,92 @@
+@startuml
+skinparam dpi 150
+hide footbox
+
+entity trackingNewFrame
+entity trackingReference
+entity currentKeyFrame
+box "SlamSystem::trackFrame"
+participant trackingNewFrame
+participant trackingReference
+participant slamNode
+participant currentKeyFrame
+end box
+
+box "SE3Tracker::trackFrame"
+participant tracker
+end box
+
+slamNode --> trackingNewFrame : //**image**//
+
+trackingNewFrame -> trackingNewFrame: init. with\nnewed **Frame**
+activate trackingNewFrame
+deactivate trackingNewFrame
+
+slamNode -> slamNode : lock\n//**currentKeyFrameMutex**//
+activate slamNode #FFBBBB
+
+alt //**currentKeyFrame**// updated
+slamNode --> trackingReference : //**currentKeyFrame**//
+trackingReference -> trackingReference : //importFrame()//
+activate trackingReference
+trackingReference -> currentKeyFrame : lock
+activate currentKeyFrame
+currentKeyFrame --> trackingReference : //**frameID**//\n//**keyframe**//
+trackingReference --> currentKeyFrame : unlock
+deactivate currentKeyFrame
+deactivate trackingReference
+end
+
+trackingReference --> slamNode : pose
+slamNode --> slamNode : //**trackingReferencePose**//
+
+slamNode -> slamNode : unlock
+deactivate slamNode
+
+slamNode -> slamNode : //lock_shared()//\n//**poseConsistencyMutex**//
+activate slamNode #FFBBBB
+
+slamNode --> slamNode : //R_{ref}_{trk}//
+deactivate slamNode
+
+slamNode -> tracker : frame, keyframe, R_init
+tracker -> trackingNewFrame : shared_lock\n//**activeMutex**//
+activate trackingNewFrame #FFBBBB
+
+loop paramid level
+trackingReference -[#0000FF]-> trackingReference : //makePointCloud()//
+trackingReference --> trackingReference : unique_lock\n//**accessMutex**//
+activate trackingReference #FFBBBB
+trackingReference --> tracker: **posData[level]**  (3d loc.)\n**pointPosInXYGrid[level]**  (id)\n**gradData[level]**\n**colorAndVarData[level]**\n**numData[level]**  (# of valid points)
+deactivate trackingReference
+
+tracker --> tracker : //calcResidualAndBuffers()//\n//**buf_warped_x**//\n//**buf_warped_y**//\n//**buf_warped_z**//\n//**buf_warped_dx**//\n//**buf_warped_dy**//\n//**buf_warped_residual**//\n//**buf_d**//\n//**buf_idepthVar**//\n//**buf_warped_size**//\n//**pointUsage**//\n//**lastGoodCount**//\n//**lastBadCount**//\n//**lastMeanRes**//\n//**affineEstimation_a_lastIt**//\n//**affineEstimation_b_lastIt**//
+activate tracker
+deactivate tracker
+
+tracker --> tracker : //calcWeightsAndResidual()//\n//**buf_weight_p**//\n//**lastErr**//
+activate tracker
+deactivate tracker
+
+loop till maxItsPerLvl
+tracker --> tracker : //calculateWarpUpdate()//\n//**ls**//
+activate tracker
+deactivate tracker
+
+loop minimize error
+
+tracker -> tracker : //calcResidualAndBuffers()//
+tracker --> tracker : //calcWeightsAndResidual()//\n//**error**//
+
+end
+
+
+end
+
+tracker --> slamNode : //R_{trk}_{ref}//
+
+
+end
+deactivate trackingNewFrame
+
+@enduml

@@ -1031,6 +1031,8 @@ float SE3Tracker::calcResidualAndBuffers(
   buf_warped_size = idx;
 
   pointUsage      = usageCount / (float)refNum;
+
+  printf("usageCount %f refNum %d\n", usageCount, refNum);
   lastGoodCount   = goodCount;
   lastBadCount    = badCount;
   lastMeanRes     = sumSignedRes / goodCount;
