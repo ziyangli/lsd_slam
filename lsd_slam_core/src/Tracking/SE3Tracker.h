@@ -23,18 +23,14 @@
 #include "util/settings.h"
 #include "util/EigenCoreInclude.h"
 #include "util/SophusUtil.h"
-#include "Tracking/LGSX.h"
+#include "LGSX.h"
 
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class TrackingReference;
 class Frame;
 
-
-class SE3Tracker
-{
+class SE3Tracker {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -47,7 +43,6 @@ class SE3Tracker
 
   DenseDepthTrackerSettings settings;
 
-
   // debug images
   cv::Mat debugImageResiduals;
   cv::Mat debugImageWeights;
@@ -55,28 +50,18 @@ class SE3Tracker
   cv::Mat debugImageOldImageSource;
   cv::Mat debugImageOldImageWarped;
 
-
   SE3Tracker(int w, int h, Eigen::Matrix3f K);
   SE3Tracker(const SE3Tracker&) = delete;
   SE3Tracker& operator=(const SE3Tracker&) = delete;
   ~SE3Tracker();
 
+  SE3 dummyTrackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate);
 
-  SE3 trackFrame(
-      TrackingReference* reference,
-      Frame* frame,
-      const SE3& frameToReference_initialEstimate);
+  SE3 trackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate);
 
+  SE3 trackFrameOnPermaref(Frame* reference, Frame* frame, SE3 referenceToFrame);
 
-  SE3 trackFrameOnPermaref(
-      Frame* reference,
-      Frame* frame,
-      SE3 referenceToFrame);
-
-
-  float checkPermaRefOverlap(
-      Frame* reference,
-      SE3 referenceToFrame);
+  float checkPermaRefOverlap(Frame* reference, SE3 referenceToFrame);
 
   float pointUsage;
   float lastGoodCount;
@@ -87,12 +72,10 @@ class SE3Tracker
   float affineEstimation_a;
   float affineEstimation_b;
 
-
   bool diverged;
   bool trackingWasGood;
+
  private:
-
-
 
   float* buf_warped_residual;
   float* buf_warped_dx;
@@ -107,44 +90,14 @@ class SE3Tracker
 
   int buf_warped_size;
 
-
-  float calcResidualAndBuffers(
-      const Eigen::Vector3f* refPoint,
-      const Eigen::Vector2f* refColVar,
-      int* idxBuf,
-      int refNum,
-      Frame* frame,
-      const Sophus::SE3f& referenceToFrame,
-      int level,
-      bool plotResidual = false);
+  float calcResidualAndBuffers(const Eigen::Vector3f* refPoint, const Eigen::Vector2f* refColVar, int* idxBuf, int refNum, Frame* frame, const Sophus::SE3f& referenceToFrame, int level, bool plotResidual = false);
 
 #if defined(ENABLE_SSE)
-  float calcResidualAndBuffersSSE(
-      const Eigen::Vector3f* refPoint,
-      const Eigen::Vector2f* refColVar,
-      int* idxBuf,
-      int refNum,
-      Frame* frame,
-      const Sophus::SE3f& referenceToFrame,
-      int level,
-      bool plotResidual = false);
+  float calcResidualAndBuffersSSE(const Eigen::Vector3f* refPoint, const Eigen::Vector2f* refColVar, int* idxBuf, int refNum, Frame* frame, const Sophus::SE3f& referenceToFrame, int level, bool plotResidual = false);
 #endif
 #if defined(ENABLE_NEON)
-  float calcResidualAndBuffersNEON(
-      const Eigen::Vector3f* refPoint,
-      const Eigen::Vector2f* refColVar,
-      int* idxBuf,
-      int refNum,
-      Frame* frame,
-      const Sophus::SE3f& referenceToFrame,
-      int level,
-      bool plotResidual = false);
+  float calcResidualAndBuffersNEON(const Eigen::Vector3f* refPoint, const Eigen::Vector2f* refColVar, int* idxBuf, int refNum, Frame* frame, const Sophus::SE3f& referenceToFrame, int level, bool plotResidual = false);
 #endif
-
-
-
-
-
 
   float calcWeightsAndResidual(
       const Sophus::SE3f& referenceToFrame);

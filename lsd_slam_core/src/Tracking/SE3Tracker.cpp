@@ -18,15 +18,17 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "SE3Tracker.h"
+#include <Eigen/Core>
 #include <opencv2/highgui/highgui.hpp>
+
+#include "SE3Tracker.h"
+#include "TrackingReference.h"
+#include "LGSX.h"
+
 #include "DataStructures/Frame.h"
-#include "Tracking/TrackingReference.h"
+
 #include "util/globalFuncs.h"
 #include "IOWrapper/ImageDisplay.h"
-#include "Tracking/LGSX.h"
-
-#include <Eigen/Core>
 
 namespace lsd_slam {
 
@@ -124,7 +126,7 @@ float SE3Tracker::checkPermaRefOverlap(Frame* reference, SE3 referenceToFrameOrg
   Eigen::Vector3f transVec = referenceToFrame.translation();
 
   float usageCount = 0;
-  const Eigen::Vector3f* refPoint = reference->permaRef_posData;
+  const Eigen::Vector3f* refPoint     = reference->permaRef_posData;
   const Eigen::Vector3f* refPoint_max = reference->permaRef_posData + reference->permaRefNumPts;
   for(; refPoint < refPoint_max; refPoint++) {
     Eigen::Vector3f Wxp = rotMat * (*refPoint) + transVec;
@@ -142,10 +144,7 @@ float SE3Tracker::checkPermaRefOverlap(Frame* reference, SE3 referenceToFrameOrg
 
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
-SE3 SE3Tracker::trackFrameOnPermaref(
-    Frame* reference,
-    Frame* frame,
-    SE3 referenceToFrameOrg) {
+SE3 SE3Tracker::trackFrameOnPermaref(Frame* reference, Frame* frame, SE3 referenceToFrameOrg) {
 
   Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
 
@@ -250,6 +249,76 @@ SE3 SE3Tracker::trackFrameOnPermaref(
   trackingWasGood = !diverged &&
                     lastGoodCount / (frame->width(QUICK_KF_CHECK_LVL)*frame->height(QUICK_KF_CHECK_LVL)) > MIN_GOODPERALL_PIXEL &&
                     lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
+
+  return toSophus(referenceToFrame);
+}
+
+SE3 SE3Tracker::dummyTrackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate) {
+
+  boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
+
+  diverged           = false;
+  trackingWasGood    = true;
+  affineEstimation_a = 1;
+  affineEstimation_b = 0;
+
+  if (saveAllTrackingStages) {
+    saveAllTrackingStages         = false;
+    saveAllTrackingStagesInternal = true;
+  }
+
+  if (plotTrackingIterationInfo) {
+    const float* frameImage = frame->image();
+    for (int row = 0; row < height; ++row)
+      for (int col = 0; col < width; ++col)
+        setPixelInCvMat(&debugImageSecondFrame, getGrayCvPixel(frameImage[col+row*width]), col, row, 1);
+  }
+
+  Sophus::SE3f referenceToFrame = frameToReference_initialEstimate.inverse().cast<float>();
+
+  for (int lvl = SE3TRACKING_MAX_LEVEL - 1; lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
+    reference->makePointCloud(lvl);
+
+    callOptimized(calcResidualAndBuffers,
+                  (reference->posData[lvl],
+                   reference->colorAndVarData[lvl],
+                   lvl == SE3TRACKING_MIN_LEVEL ?
+                   reference->pointPosInXYGrid[lvl] : 0,  // no track
+                   reference->numData[lvl],
+                   frame, referenceToFrame, lvl,
+                   (plotTracking && lvl == SE3TRACKING_MIN_LEVEL)));
+
+    // [note] zli: strong constraint of photoconsistency
+    if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width >> lvl) * (height >> lvl)) {
+      diverged        = true;
+      trackingWasGood = false;
+      return toSophus(referenceToFrame);
+    }
+
+    if (useAffineLightningEstimation) {
+      affineEstimation_a = affineEstimation_a_lastIt;
+      affineEstimation_b = affineEstimation_b_lastIt;
+    }
+
+    lastResidual = callOptimized(calcWeightsAndResidual, (referenceToFrame));
+
+  }
+
+  if (plotTracking)
+    Util::displayImage("TrackingResidual", debugImageResiduals, false);
+
+  saveAllTrackingStagesInternal = false;
+
+  trackingWasGood = !diverged
+                    && lastGoodCount / (frame->width(SE3TRACKING_MIN_LEVEL)*frame->height(SE3TRACKING_MIN_LEVEL)) > MIN_GOODPERALL_PIXEL
+                    && lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
+
+  if (trackingWasGood)
+    reference->keyframe->numFramesTrackedOnThis++;
+
+  frame->initialTrackedResidual = lastResidual / pointUsage;
+  frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()), 1);
+  frame->pose->trackingParent   = reference->keyframe->pose;
 
   return toSophus(referenceToFrame);
 }

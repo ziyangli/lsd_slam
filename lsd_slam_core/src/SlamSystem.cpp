@@ -28,16 +28,20 @@
 #include <android/log.h>
 #endif
 
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 
 #include "SlamSystem.h"
+#include "LiveSLAMWrapper.h"
 
 #include "DataStructures/Frame.h"
+#include "DataStructures/FrameMemory.h"
+
 #include "Tracking/SE3Tracker.h"
 #include "Tracking/Sim3Tracker.h"
-#include "DepthEstimation/DepthMap.h"
 #include "Tracking/TrackingReference.h"
-#include "LiveSLAMWrapper.h"
+
+#include "DepthEstimation/DepthMap.h"
+
 #include "util/globalFuncs.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
@@ -45,12 +49,10 @@
 #include "IOWrapper/ImageDisplay.h"
 #include "IOWrapper/Output3DWrapper.h"
 #include "g2o/core/robust_kernel_impl.h"
-#include "DataStructures/FrameMemory.h"
 
 using namespace lsd_slam;
 
-SlamSystem::SlamSystem(
-    int w, int h, Eigen::Matrix3f K, bool enableSLAM) :
+SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM) :
     SLAMEnabled(enableSLAM),
     relocalizer(w, h, K) {
 
@@ -846,6 +848,7 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
   // update trackingReference
   if (trackingReference->keyframe != currentKeyFrame.get() ||
       currentKeyFrame->depthHasBeenUpdatedFlag) {
+
     trackingReference->importFrame(currentKeyFrame.get());
     currentKeyFrame->depthHasBeenUpdatedFlag = false;
     trackingReferenceFrameSharedPT = currentKeyFrame;
@@ -868,15 +871,22 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
       keyFrameGraph->allFramePoses.back()->getCamToWorld()); /* zli: seems to be the previous tracked frame */
   poseConsistencyMutex.unlock_shared();
 
+
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
 
   //////////////////////////////
   // get R & T
-  SE3 newRefToFrame_poseUpdate = tracker->trackFrame(
+
+  SE3 newRefToFrame_poseUpdate = tracker->dummyTrackFrame(
       trackingReference,
       trackingNewFrame.get(),
       frameToReference_initialEstimate);
+
+  // SE3 newRefToFrame_poseUpdate = tracker->trackFrame(
+  //     trackingReference,
+  //     trackingNewFrame.get(),
+  //     frameToReference_initialEstimate);
   //////////////////////////////
 
   gettimeofday(&tv_end, NULL);
