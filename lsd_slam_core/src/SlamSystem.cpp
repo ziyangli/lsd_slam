@@ -495,10 +495,7 @@ void SlamSystem::changeKeyframe(bool noCreate, bool force, float maxScore) {
     newReferenceKF = trackableKeyFrameSearch->findRePositionCandidate(newKeyframeCandidate.get(), maxScore);
     gettimeofday(&tv_end, NULL);
 
-    msFindReferences = 0.9*msFindReferences +
-                       0.1*(
-                           (tv_end.tv_sec-tv_start.tv_sec)*1000.0f +
-                           (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
+    msFindReferences = 0.9*msFindReferences + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
     nFindReferences++;
   }
 

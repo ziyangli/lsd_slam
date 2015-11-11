@@ -274,22 +274,20 @@ SE3 SE3Tracker::dummyTrackFrame(TrackingReference* reference, Frame* frame, cons
         setPixelInCvMat(&debugImageSecondFrame, getGrayCvPixel(frameImage[col+row*width]), col, row, 1);
   }
 
-  Sophus::SE3f referenceToFrame = frameToReference_initialEstimate.inverse().cast<float>();
+  Sophus::SE3f referenceToFrame  = frameToReference_initialEstimate.inverse().cast<float>();
 
-  for (int lvl = SE3TRACKING_MAX_LEVEL - 1; lvl >= SE3TRACKING_MIN_LEVEL; lvl--) {
-    reference->makePointCloud(lvl);
+    reference->makePointCloud(1);
 
     callOptimized(calcResidualAndBuffers,
-                  (reference->posData[lvl],
-                   reference->colorAndVarData[lvl],
-                   lvl == SE3TRACKING_MIN_LEVEL ?
-                   reference->pointPosInXYGrid[lvl] : 0,  // no track
-                   reference->numData[lvl],
-                   frame, referenceToFrame, lvl,
-                   (plotTracking && lvl == SE3TRACKING_MIN_LEVEL)));
+                  (reference->posData[1],
+                   reference->colorAndVarData[1],
+                   reference->pointPosInXYGrid[1],
+                   reference->numData[1],
+                   frame, referenceToFrame, 1,
+                   plotTracking));
 
     // [note] zli: strong constraint of photoconsistency
-    if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width >> lvl) * (height >> lvl)) {
+    if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width >> 1) * (height >> 1)) {
       diverged        = true;
       trackingWasGood = false;
       return toSophus(referenceToFrame);
@@ -302,16 +300,12 @@ SE3 SE3Tracker::dummyTrackFrame(TrackingReference* reference, Frame* frame, cons
 
     lastResidual = callOptimized(calcWeightsAndResidual, (referenceToFrame));
 
-  }
-
   if (plotTracking)
     Util::displayImage("TrackingResidual", debugImageResiduals, false);
 
   saveAllTrackingStagesInternal = false;
 
-  trackingWasGood = !diverged
-                    && lastGoodCount / (frame->width(SE3TRACKING_MIN_LEVEL)*frame->height(SE3TRACKING_MIN_LEVEL)) > MIN_GOODPERALL_PIXEL
-                    && lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
+  trackingWasGood = !diverged && lastGoodCount / (frame->width(SE3TRACKING_MIN_LEVEL)*frame->height(SE3TRACKING_MIN_LEVEL)) > MIN_GOODPERALL_PIXEL && lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
 
   if (trackingWasGood)
     reference->keyframe->numFramesTrackedOnThis++;
@@ -946,7 +940,7 @@ float SE3Tracker::calcResidualAndBuffers(
     // step 1a: coordinates have to be in image:
     // (inverse test to exclude NANs)
     if (!(u_new > 1 && v_new > 1 && u_new < w-2 && v_new < h-2)) {
-      if (isGoodOutBuffer != 0)
+      if (isGoodOutBuffer != nullptr)
         isGoodOutBuffer[*idxBuf] = false;
       continue;
     }
