@@ -18,9 +18,6 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <opencv2/opencv.hpp>
-#include <boost/bind.hpp>
-
 #include "settings.h"
 
 namespace lsd_slam {
@@ -111,10 +108,12 @@ std::string packagePath            = "";
 void handleKey(char k) {
   switch(k) {
     case 'a': case 'A':
-      //        autoRun = !autoRun;     // disabled... only use for debugging & if you really, really know what you are doing
+      // autoRun = !autoRun;
+      // disabled... only use for debugging & if you really, really know what you are doing
       break;
     case 's': case 'S':
-      //        autoRunWithinFrame = !autoRunWithinFrame;   // disabled... only use for debugging & if you really, really know what you are doing
+      // autoRunWithinFrame = !autoRunWithinFrame;
+      // disabled... only use for debugging & if you really, really know what you are doing
       break;
     case 'd': case 'D':
       debugDisplay = (debugDisplay+1)%6;

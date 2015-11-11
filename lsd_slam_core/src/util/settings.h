@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <string>
 
 namespace lsd_slam {
@@ -68,33 +69,33 @@ namespace lsd_slam {
 
 // Whether to use the gradients of source and target frame for tracking,
 // or only the target frame gradient
-#define USE_ESM_TRACKING 1
+#define USE_ESM_TRACKING       1
 
 #ifdef ANDROID
 // tracking pyramid levels.
-#define MAPPING_THREADS 2
-#define RELOCALIZE_THREADS 4
+#define MAPPING_THREADS        2
+#define RELOCALIZE_THREADS     4
 #else
 // tracking pyramid levels.
-#define MAPPING_THREADS 4
-#define RELOCALIZE_THREADS 6
+#define MAPPING_THREADS        4
+#define RELOCALIZE_THREADS     6
 #endif
 
-#define SE3TRACKING_MIN_LEVEL 1
-#define SE3TRACKING_MAX_LEVEL 5
+#define SE3TRACKING_MIN_LEVEL  1
+#define SE3TRACKING_MAX_LEVEL  5
 
 #define SIM3TRACKING_MIN_LEVEL 1
 #define SIM3TRACKING_MAX_LEVEL 5
 
-#define QUICK_KF_CHECK_LVL 4
+#define QUICK_KF_CHECK_LVL     4
 
 #define PYRAMID_LEVELS (SE3TRACKING_MAX_LEVEL > SIM3TRACKING_MAX_LEVEL ? SE3TRACKING_MAX_LEVEL : SIM3TRACKING_MAX_LEVEL)
 
 // ============== stereo & gradient calculation ======================
-#define MIN_DEPTH 0.05f // this is the minimal depth tested for stereo.
+#define MIN_DEPTH 0.05f // this is the minimal depth tested for stereo
 
 // particularely important for initial pixel.
-#define MAX_EPL_LENGTH_CROP 30.0f // maximum length of epl to search.
+#define MAX_EPL_LENGTH_CROP 30.0f  // maximum length of epl to search.
 #define MIN_EPL_LENGTH_CROP (3.0f) // minimum length of epl to search.
 
 // this is the distance of the sample points used for the stereo descriptor.
@@ -183,7 +184,6 @@ extern bool plotSim3TrackingIterationInfo;
 extern bool plotStereoImages;
 extern bool plotTracking;
 
-
 extern bool allowNegativeIdepths;
 extern bool useMotionModel;
 extern bool useSubpixelStereo;
@@ -195,7 +195,6 @@ extern float freeDebugParam2;
 extern float freeDebugParam3;
 extern float freeDebugParam4;
 extern float freeDebugParam5;
-
 
 extern float KFDistWeight;
 extern float KFUsageWeight;
@@ -220,7 +219,6 @@ extern bool saveAllTrackingStages;
 extern bool saveAllTrackingStagesInternal;
 
 extern bool continuousPCOutput;
-
 
 /// Relative path of calibration file, map saving directory etc. for live_odometry
 extern std::string packagePath;
@@ -307,6 +305,7 @@ class RunningStats {
     memset(this, 0, sizeof(RunningStats));
   }
 
+  // add another stat to this stat
   inline void add(RunningStats* r) {
     int* pt = (int*)this;
     int* pt_r = (int*)r;
@@ -328,7 +327,7 @@ class DenseDepthTrackerSettings {
     const float stepSizeMinc[6] = {1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8};
     const int maxIterations[6]  = {5, 20, 50, 100, 100, 100};
 
-    for (int level = 0; level < PYRAMID_LEVELS; ++ level) {
+    for (int level = 0; level < PYRAMID_LEVELS; level++) {
       lambdaInitial[level]  = 0;
       stepSizeMin[level]    = stepSizeMinc[level];
       convergenceEps[level] = 0.999f;
@@ -363,4 +362,5 @@ class DenseDepthTrackerSettings {
 extern RunningStats runningStats;
 
 void handleKey(char k);
+
 }

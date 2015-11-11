@@ -931,8 +931,6 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
   // by zli: why do we need to add a normal frame?
   keyFrameGraph->addFrame(trackingNewFrame.get());
 
-  //Sim3 lastTrackedCamToWorld = mostCurrentTrackedFrame->getScaledCamToWorld();//  mostCurrentTrackedFrame->TrackingParent->getScaledCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
-
   if (outputWrapper != nullptr) {
     outputWrapper->publishTrackedFrame(trackingNewFrame.get());
   }

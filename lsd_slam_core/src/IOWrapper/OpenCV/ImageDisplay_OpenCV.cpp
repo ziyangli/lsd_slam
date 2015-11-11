@@ -37,7 +37,7 @@ std::unordered_set<std::string> openWindows;
 boost::mutex openCVdisplayMutex;
 boost::condition_variable  openCVdisplaySignal;
 
-boost::thread* imageDisplayThread = 0;
+boost::thread* imageDisplayThread = nullptr;
 std::vector<DisplayImageObect> displayQueue;
 bool imageThreadKeepRunning = true;
 
@@ -77,7 +77,7 @@ void makeDisplayThread() {
 
 void displayImage(const char* windowName, const cv::Mat& image, bool autoSize) {
   if (useImageDisplayThread) {
-    if (imageDisplayThread == 0)
+    if (imageDisplayThread == nullptr)
       makeDisplayThread();
 
     boost::unique_lock<boost::mutex> lock(openCVdisplayMutex);
@@ -115,7 +115,7 @@ void closeAllWindows() {
 
   if (useImageDisplayThread) {
 
-    if (imageDisplayThread != 0) {
+    if (imageDisplayThread != nullptr) {
       imageThreadKeepRunning = false;
       openCVdisplaySignal.notify_all();
       printf("waiting for image display thread to end!\n");
