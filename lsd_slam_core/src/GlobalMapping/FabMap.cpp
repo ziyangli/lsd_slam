@@ -19,22 +19,20 @@
  */
 
 #ifdef HAVE_FABMAP
-#include "GlobalMapping/FabMap.h"
 
 #include <fstream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/nonfree/features2d.hpp>
+
+#include "FabMap.h"
 #include "openfabmap.hpp"
 
 #include "util/settings.h"
 #include "DataStructures/Frame.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
-
-FabMap::FabMap()
-{
+FabMap::FabMap() {
   valid = false;
 
   std::string fabmapTrainDataPath = packagePath + "thirdparty/openFabMap/trainingdata/StLuciaShortTraindata.yml";
@@ -106,13 +104,11 @@ FabMap::FabMap()
   valid = true;
 }
 
-FabMap::~FabMap()
-{
-  if (printConfusionMatrix)
-  {
+FabMap::~FabMap() {
+  if (printConfusionMatrix) {
     std::ofstream writer((packagePath + "fabMapResult.txt").c_str());
-    for(int i = 0; i < confusionMat.rows; i++) {
-      for(int j = 0; j < confusionMat.cols; j++) {
+    for (int i = 0; i < confusionMat.rows; i++) {
+      for (int j = 0; j < confusionMat.cols; j++) {
         writer << confusionMat.at<float>(i, j) << " ";
       }
       writer << std::endl;

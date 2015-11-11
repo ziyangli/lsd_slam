@@ -21,9 +21,10 @@
 #include <opencv2/opencv.hpp>
 #include <boost/bind.hpp>
 
-#include "util/settings.h"
+#include "settings.h"
 
 namespace lsd_slam {
+
 RunningStats runningStats;
 
 bool autoRun                       = true;

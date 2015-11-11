@@ -20,9 +20,9 @@
 
 #include <cmath>
 
-#include "util/settings.h"
+#include "DepthMapPixelHypothesis.h"
 
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
+#include "util/settings.h"
 
 namespace lsd_slam {
 

@@ -23,12 +23,14 @@
 #include <iostream>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "DepthEstimation/DepthMap.h"
+#include "DepthMap.h"
+#include "DepthMapPixelHypothesis.h"
 
 #include "util/settings.h"
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
-#include "DataStructures/Frame.h"
 #include "util/globalFuncs.h"
+
+#include "DataStructures/Frame.h"
+
 #include "IOWrapper/ImageDisplay.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 

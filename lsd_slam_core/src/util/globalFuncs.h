@@ -21,9 +21,10 @@
 #pragma once
 #include <opencv2/core/core.hpp>
 
-#include "util/settings.h"
+#include "settings.h"
+#include "SophusUtil.h"
+
 #include "IOWrapper/TimestampedObject.h"
-#include "util/SophusUtil.h"
 
 namespace lsd_slam {
 

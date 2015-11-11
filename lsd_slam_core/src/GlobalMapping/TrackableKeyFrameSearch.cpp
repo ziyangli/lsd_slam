@@ -18,9 +18,9 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "GlobalMapping/TrackableKeyFrameSearch.h"
+#include "TrackableKeyFrameSearch.h"
+#include "KeyFrameGraph.h"
 
-#include "GlobalMapping/KeyFrameGraph.h"
 #include "DataStructures/Frame.h"
 #include "Tracking/SE3Tracker.h"
 

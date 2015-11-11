@@ -147,8 +147,7 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const geometry_msgs::
     isInitialized = true;
   }
   else if (isInitialized && monoOdometry != nullptr) {
-    monoOdometry->trackFrame(
-        grayImg.data, imageSeqNumber, vin_Pose_cam, false, imgTime.toSec());
+    monoOdometry->trackFrame(grayImg.data, imageSeqNumber, vin_Pose_cam, false, imgTime.toSec());
   }
 }
 

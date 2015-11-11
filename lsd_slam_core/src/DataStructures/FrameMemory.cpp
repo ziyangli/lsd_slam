@@ -23,8 +23,8 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/lock_types.hpp>
 
-#include "DataStructures/Frame.h"
-#include "DataStructures/FrameMemory.h"
+#include "Frame.h"
+#include "FrameMemory.h"
 
 namespace lsd_slam {
 

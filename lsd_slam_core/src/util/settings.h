@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <string.h>
 #include <string>
 
 namespace lsd_slam {
@@ -145,7 +144,7 @@ namespace lsd_slam {
 
 #define INITIALIZATION_PHASE_COUNT 5
 
-#define MIN_NUM_MAPPED 5
+#define MIN_NUM_MAPPED 3
 
 // settings variables
 // controlled via keystrokes

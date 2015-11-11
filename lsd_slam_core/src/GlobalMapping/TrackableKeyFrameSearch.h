@@ -27,7 +27,7 @@
 #include "util/SophusUtil.h"
 
 #ifdef HAVE_FABMAP
-#include "GlobalMapping/FabMap.h"
+#include "FabMap.h"
 #endif
 
 #include "util/settings.h"

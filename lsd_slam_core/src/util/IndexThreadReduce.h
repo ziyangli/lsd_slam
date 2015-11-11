@@ -23,7 +23,7 @@
 #include <iostream>
 #include <boost/thread.hpp>
 
-#include "util/settings.h"
+#include "settings.h"
 
 namespace lsd_slam {
 

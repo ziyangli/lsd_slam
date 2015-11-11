@@ -18,8 +18,23 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "GlobalMapping/KeyFrameGraph.h"
+// for mkdir
+#include <sys/types.h>
+#include <sys/stat.h>
+// for iterating over files in a directory
+#include <dirent.h>
+#include <queue>
+#include <iostream>
+#include <fstream>
+
+#include <opencv2/opencv.hpp>
+
+#include "KeyFrameGraph.h"
+#include "g2oTypeSim3Sophus.h"
+
 #include "DataStructures/Frame.h"
+#include "IOWrapper/ImageDisplay.h"
+#include "util/globalFuncs.h"
 
 #include <g2o/core/sparse_optimizer.h>
 #include <g2o/solvers/pcg/linear_solver_pcg.h>
@@ -31,33 +46,12 @@
 #include <g2o/core/robust_kernel_impl.h>
 #include <g2o/core/estimate_propagator.h>
 #include <g2o/core/sparse_optimizer_terminate_action.h>
-
-#include "opencv2/opencv.hpp"
-
 #include <g2o/types/sim3/sim3.h>
-#include "GlobalMapping/g2oTypeSim3Sophus.h"
-
-
-#include "IOWrapper/ImageDisplay.h"
-
-// for mkdir
-#include <sys/types.h>
-#include <sys/stat.h>
-// for iterating over files in a directory
-#include <dirent.h>
-#include <queue>
-
-#include <iostream>
-#include <fstream>
-
-#include "util/globalFuncs.h"
 
 namespace lsd_slam {
 
-
-KFConstraintStruct::~KFConstraintStruct()
-{
-  if(edge != 0)
+KFConstraintStruct::~KFConstraintStruct() {
+  if (edge != 0)
     delete edge;
 }
 
@@ -75,16 +69,12 @@ KeyFrameGraph::KeyFrameGraph() : nextEdgeId(0) {
   blockSolver->setWriteDebug(true);
   algorithm->setWriteDebug(true);
 
-
-  totalPoints=0;
-  totalEdges=0;
-  totalVertices=0;
-
-
+  totalPoints   = 0;
+  totalEdges    = 0;
+  totalVertices = 0;
 }
 
-KeyFrameGraph::~KeyFrameGraph()
-{
+KeyFrameGraph::~KeyFrameGraph() {
   // deletes edges
   for (KFConstraintStruct* edge : newEdgeBuffer)
     delete edge;    // deletes the g2oedge, which deletes the kernel.
@@ -117,8 +107,7 @@ void KeyFrameGraph::dumpMap(std::string folder) {
   int succ = system(("rm -rf "+folder).c_str());
   succ += system(("mkdir "+folder).c_str());
 
-  for(unsigned int i=0;i<keyframesAll.size();i++)
-  {
+  for (unsigned int i=0;i<keyframesAll.size();i++) {
     snprintf(buf, 100, "%s/depth-%d.png", folder.c_str(), i);
     cv::imwrite(buf, getDepthRainbowPlot(keyframesAll[i], 0));
 
@@ -128,7 +117,6 @@ void KeyFrameGraph::dumpMap(std::string folder) {
     snprintf(buf, 100, "%s/var-%d.png", folder.c_str(), i);
     cv::imwrite(buf, getVarRedGreenPlot(keyframesAll[i]->idepthVar(),keyframesAll[i]->image(),keyframesAll[i]->width(),keyframesAll[i]->height()));
   }
-
 
   int i = keyframesAll.size()-1;
   Util::displayImage("VAR PREVIEW", getVarRedGreenPlot(keyframesAll[i]->idepthVar(),keyframesAll[i]->image(),keyframesAll[i]->width(),keyframesAll[i]->height()));
@@ -157,15 +145,13 @@ void KeyFrameGraph::dumpMap(std::string folder) {
   meanRootInformation.setZero();
   usedPixels.setZero();
 
-  for(unsigned int i=0;i<keyframesAll.size();i++)
-  {
+  for(unsigned int i=0;i<keyframesAll.size();i++) {
     meanRootInformation[i] = keyframesAll[i]->meanInformation;
     usedPixels[i] = keyframesAll[i]->numPoints / (float)keyframesAll[i]->numMappablePixels;
   }
 
-
   edgesListsMutex.lock_shared();
-  for(unsigned int i=0;i<edgesAll.size();i++)
+  for (unsigned int i=0;i<edgesAll.size();i++)
   {
     KFConstraintStruct* e = edgesAll[i];
 

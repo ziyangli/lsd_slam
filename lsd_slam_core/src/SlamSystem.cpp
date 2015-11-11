@@ -861,8 +861,7 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
 
   // DO TRACKING & Show tracking result.
   if (enablePrintDebugInfo && printThreadingInfo)
-    printf("TRACKING %d on %d\n",
-           trackingNewFrame->id(), trackingReferencePose->frameID);
+    printf("TRACKING %d on %d\n", trackingNewFrame->id(), trackingReferencePose->frameID);
 
   poseConsistencyMutex.lock_shared();
   // by zli: ref: keyframe yet not finalized
@@ -870,7 +869,6 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
       trackingReferencePose->getCamToWorld().inverse() *
       keyFrameGraph->allFramePoses.back()->getCamToWorld()); /* zli: seems to be the previous tracked frame */
   poseConsistencyMutex.unlock_shared();
-
 
   struct timeval tv_start, tv_end;
   gettimeofday(&tv_start, NULL);
