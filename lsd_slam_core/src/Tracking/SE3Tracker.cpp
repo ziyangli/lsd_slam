@@ -165,7 +165,7 @@ SE3 SE3Tracker::dummyTrackFrame(TrackingReference* reference, Frame* frame, cons
     reference->keyframe->numFramesTrackedOnThis++;
 
   frame->initialTrackedResidual = lastResidual / pointUsage;
-  frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()), 1);
+  frame->pose->thisToParent_raw = sim3FromSE3(toSophus(frameToReference_initialEstimate), 1);
   frame->pose->trackingParent   = reference->keyframe->pose;
 
   return toSophus(referenceToFrame);
@@ -410,9 +410,9 @@ float SE3Tracker::calcWeightsAndResidualNEON(const Sophus::SE3f& referenceToFram
 #endif
 
 float SE3Tracker::calcWeightsAndResidual(const Sophus::SE3f& referenceToFrame) {
-  float tx = referenceToFrame.translation()[0];
-  float ty = referenceToFrame.translation()[1];
-  float tz = referenceToFrame.translation()[2];
+  float tx = referenceToFrame.translation().x();
+  float ty = referenceToFrame.translation().y();
+  float tz = referenceToFrame.translation().z();
 
   float sumRes = 0;
 
