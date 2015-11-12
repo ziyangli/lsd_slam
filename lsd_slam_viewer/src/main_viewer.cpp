@@ -18,7 +18,6 @@
  * along with dvo. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 
@@ -39,7 +38,6 @@
 PointCloudViewer* viewer = NULL;
 
 void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t level) {
-
   pointTesselation      = config.pointTesselation;
   lineTesselation       = config.lineTesselation;
 
@@ -60,15 +58,14 @@ void dynConfCb(lsd_slam_viewer::LSDSLAMViewerParamsConfig &config, uint32_t leve
 }
 
 void frameCb(lsd_slam_viewer::keyframeMsgConstPtr msg) {
-
   if (msg->time > lastFrameTime) return;
 
-  if (viewer != 0)
+  if (viewer != NULL)
     viewer->addFrameMsg(msg);
 }
 
 void graphCb(lsd_slam_viewer::keyframeGraphMsgConstPtr msg) {
-  if (viewer != 0)
+  if (viewer != NULL)
     viewer->addGraphMsg(msg);
 }
 
@@ -85,9 +82,9 @@ void rosThreadLoop(int argc, char** argv) {
 
   ros::NodeHandle nh;
 
-  ros::Subscriber liveFrames_sub = nh.subscribe(nh.resolveName("lsd_slam/liveframes"),1, frameCb);
-  ros::Subscriber keyFrames_sub  = nh.subscribe(nh.resolveName("lsd_slam/keyframes"),20, frameCb);
-  ros::Subscriber graph_sub      = nh.subscribe(nh.resolveName("lsd_slam/graph"),10, graphCb);
+  ros::Subscriber liveFrames_sub = nh.subscribe(nh.resolveName("lsd_slam/liveframes"), 1, frameCb);
+  ros::Subscriber keyFrames_sub  = nh.subscribe(nh.resolveName("lsd_slam/keyframes"), 20, frameCb);
+  ros::Subscriber graph_sub      = nh.subscribe(nh.resolveName("lsd_slam/graph"), 10, graphCb);
 
   ros::spin();
 
@@ -136,7 +133,7 @@ int main(int argc, char** argv) {
 
   printf("Started QApplication thread\n");
   // Read command lines arguments.
-  QApplication application(argc,argv);
+  QApplication application(argc, argv);
 
   // Instantiate the viewer.
   viewer = new PointCloudViewer();

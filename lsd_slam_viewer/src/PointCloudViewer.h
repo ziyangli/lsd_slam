@@ -19,9 +19,6 @@
  */
 
 #pragma once
-//#define GL_GLEXT_PROTOTYPES 1
-//#define GL3_PROTOTYPES 1
-//#include <GL/glew.h>
 
 #include <vector>
 #include <boost/thread.hpp>
@@ -32,14 +29,14 @@
 #include <QGLViewer/qglviewer.h>
 #include <QGLViewer/keyFrameInterpolator.h>
 
+#include "settings.h"
+
 #include "lsd_slam_viewer/keyframeMsg.h"
 #include "lsd_slam_viewer/keyframeGraphMsg.h"
 
 class KeyFrameGraphDisplay;
 class CameraDisplay;
 class KeyFrameDisplay;
-
-#include "settings.h"
 
 class AnimationObject {
  public:
@@ -63,55 +60,50 @@ class AnimationObject {
 
   bool isFix;
 
-  AnimationObject(bool isSettings, double time, double duration, qglviewer::Frame f = qglviewer::Frame())
-  {
-    this->time = time;
-    this->duration = duration;
+  AnimationObject(bool isSettings, double time, double duration, qglviewer::Frame f = qglviewer::Frame()) {
+    this->time       = time;
+    this->duration   = duration;
 
-    scaledTH = scaledDepthVarTH;
-    absTH = absDepthVarTH;
-    neighb = minNearSupport;
-    showKeyframes = showKFCameras;
+    scaledTH         = scaledDepthVarTH;
+    absTH            = absDepthVarTH;
+    neighb           = minNearSupport;
+    showKeyframes    = showKFCameras;
     showLoopClosures = showConstraints;
-    showCurrentCam = showCurrentCamera;
-    sparsity = sparsifyFactor;
+    showCurrentCam   = showCurrentCamera;
+    sparsity         = sparsifyFactor;
 
     this->isSettings = isSettings;
 
-    frame = f;
+    frame            = f;
 
-    isFix = false;
+    isFix            = false;
   }
 
-  AnimationObject(std::string s)
-  {
+  AnimationObject(std::string s) {
     int isSettings_i;
     int showLoopClosures_i;
     int showKeyframes_i;
     int showCurrentCam_i;
     int isFix_i;
 
-
     qglviewer::Quaternion orient;
-
 
     float x,y,z;
 
-    if(17 != sscanf(s.c_str(),"Animation: %d at %lf (dur %lf) S: %f %f %d %d %d %d %d Frame: %lf %lf %lf %lf %f %f %f %d\n",
+    if (17 != sscanf(s.c_str(), "Animation: %d at %lf (dur %lf) S: %f %f %d %d %d %d %d Frame: %lf %lf %lf %lf %f %f %f %d\n",
                     &isSettings_i, &time, &duration,
                     &scaledTH, &absTH, &showLoopClosures_i, &showKeyframes_i, &showCurrentCam_i, &sparsity, &neighb,
                     &(orient[0]),&(orient[1]),&(orient[2]),&(orient[3]),
                     &x, &y, &z, &isFix_i))
       printf("error parsing: %s\n", s.c_str());
 
-    isSettings = isSettings_i;
+    isSettings       = isSettings_i;
     showLoopClosures = showLoopClosures_i;
-    showKeyframes = showKeyframes_i;
-    showCurrentCam = showCurrentCam_i;
-    isFix = isFix_i;
+    showKeyframes    = showKeyframes_i;
+    showCurrentCam   = showCurrentCam_i;
+    isFix            = isFix_i;
 
-
-    frame = qglviewer::Frame(qglviewer::Vec(0,0,0),orient);
+    frame            = qglviewer::Frame(qglviewer::Vec(0,0,0),orient);
     frame.setPosition(x,y,z);
 
     printf("read: %s\n",toString().c_str());
@@ -130,8 +122,8 @@ class AnimationObject {
     int showCurrentCam_i   = showCurrentCam;
     int isFix_i            = isFix;
 
-    float x,y,z;
-    frame.getPosition(x,y,z);
+    float x, y, z;
+    frame.getPosition(x, y, z);
 
     snprintf(buf, 1000, "Animation: %d at %lf (dur %lf) S: %f %f %d %d %d %d %d Frame: %lf %lf %lf %lf %f %f %f %d",
              isSettings_i, time, duration,
@@ -142,7 +134,6 @@ class AnimationObject {
     return buf;
   }
 };
-
 
 class PointCloudViewer : public QGLViewer {
  public:
@@ -179,21 +170,21 @@ class PointCloudViewer : public QGLViewer {
 
   // for saving stuff
   std::string save_folder;
-  double localMsBetweenSaves;
-  double simMsBetweenSaves;
-  double lastSaveTime;
-  double lastCamTime;
-  int lastCamID;
+  double      localMsBetweenSaves;
+  double      simMsBetweenSaves;
+  double      lastSaveTime;
+  double      lastCamTime;
+  int         lastCamID;
 
-  double lastLocalSaveTime;
-  double lastRealSaveTime;
+  double      lastLocalSaveTime;
+  double      lastRealSaveTime;
 
   // for keyframe interpolation
-  int KFLastPCSeq;
-  int KFcurrent;
-  double KFautoPlayIdx[10];
-  bool KFexists[10];
-  double lastAutoplayCheckedSaveTime;
+  int         KFLastPCSeq;
+  int         KFcurrent;
+  double      KFautoPlayIdx[10];
+  bool        KFexists[10];
+  double      lastAutoplayCheckedSaveTime;
 
   // for display settings autoplay
   std::vector<AnimationObject> animationList;
