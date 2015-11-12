@@ -1,8 +1,8 @@
 #ifndef INPUTSTREAM_H
 #define INPUTSTREAM_H
 
-#include "IOWrapper/NotifyBuffer.h"
-#include "IOWrapper/TimestampedObject.h"
+#include "NotifyBuffer.h"
+#include "TimestampedObject.h"
 
 namespace lsd_slam {
 
@@ -40,7 +40,7 @@ class InputStream {
 
  protected:
   float fx_, fy_, cx_, cy_;
-  int width_, height_;
+  int   width_, height_;
 
   NotifyBuffer<TimestampedMat>*   imageBuffer;
   NotifyBuffer<TimestampedTFMsg>* poseBuffer;

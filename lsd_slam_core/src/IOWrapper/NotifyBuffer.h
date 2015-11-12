@@ -18,18 +18,18 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OBJECT_BUFFER_HPP_
-#define _OBJECT_BUFFER_HPP_
+#ifndef NOTIFYBUFFER_H
+#define NOTIFYBUFFER_H
 
 #include <deque>
-#include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace lsd_slam {
 
 /**
- * Contains an internal boost::condition on which notify_all() can be called
- * from the outside.
+ * Contains an internal boost::condition on which notify_all()
+ * can be called from the outside.
  */
 class Notifiable {
  public:
@@ -45,20 +45,22 @@ class Notifiable {
 };
 
 /**
- * Thread-safe limited-size buffer which may notify a specific object when
- * a new item becomes available.
+ * Thread-safe limited-size buffer which may notify a specific object
+ * when a new item becomes available.
  */
-template< typename T >
+template<typename T>
 class NotifyBuffer {
  public:
   /**
    * Creates a queue with the given maximum size.
    */
-  NotifyBuffer(int bufferSize) : bufferSize(bufferSize), receiver(nullptr) {}
+  NotifyBuffer(int bufferSize) :
+      bufferSize(bufferSize), receiver(nullptr) {}
 
   /**
-   * Creates a queue with the given maximum size and Notifiable instance
-   * which will be notified when a new object becomes available.
+   * Creates a queue with the given maximum size and Notifiable
+   * instance which will be notified when a new object becomes
+   * available.
    */
   NotifyBuffer(int bufferSize, Notifiable* receiver) :
       bufferSize(bufferSize), receiver(receiver) {}
@@ -75,8 +77,8 @@ class NotifyBuffer {
   /**
    * Adds an object to the back of the queue.
    *
-   * If the queue is full already, discards the object. Returns if there
-   * was enough space to add the object.
+   * If the queue is full already, discards the object. Returns if
+   * there was enough space to add the object.
    */
   bool pushBack(const T& object) {
     boost::unique_lock<boost::recursive_mutex> lock(bufferMutex);
@@ -117,7 +119,8 @@ class NotifyBuffer {
   /**
    * Removes the first object and returns a copy of it.
    *
-   * If there is no object in the queue, blocks until one is available.
+   * If there is no object in the queue, blocks until one is
+   * available.
    */
   T popFront() {
     boost::unique_lock<boost::recursive_mutex> lock(bufferMutex);
@@ -133,8 +136,8 @@ class NotifyBuffer {
   }
 
   /**
-   * Returns the buffer access mutex. Must be locked when checking size()
-   * and waiting if size() == 0.
+   * Returns the buffer access mutex. Must be locked when checking
+   * size() and waiting if size() == 0.
    */
   boost::recursive_mutex& getMutex() {
     return bufferMutex;

@@ -25,15 +25,6 @@
 #include <chrono>
 #include <boost/thread/mutex.hpp>
 
-// TODO: remove this hack
-namespace std {
-namespace chrono {
-#if (__GNUC__ > 4) || (__GNUC_MINOR__ >= 8)
-#define monotonic_clock steady_clock
-#endif
-}
-}
-
 namespace lsd_slam {
 
 /**
@@ -48,8 +39,8 @@ class Timestamp {
   Timestamp(double seconds);
 
   /**
-   * Returns the timestamp as the time in seconds which has passed since the
-   * start of the program until the timestamp was taken.
+   * Returns the timestamp as the time in seconds which has passed
+   * since the start of the program until the timestamp was taken.
    */
   double toSec() const;
 
@@ -69,13 +60,14 @@ class Timestamp {
   static Timestamp now();
 
  private:
-  std::chrono::monotonic_clock::time_point timePoint;
+  std::chrono::steady_clock::time_point timePoint;
   std::chrono::system_clock::time_point systemTimePoint;
 
-  static const std::chrono::monotonic_clock::time_point startupTimePoint;
+  static const std::chrono::steady_clock::time_point startupTimePoint;
   static boost::mutex localtimeMutex;
 
   double externalStamp;
 };
+
 }
 #endif
