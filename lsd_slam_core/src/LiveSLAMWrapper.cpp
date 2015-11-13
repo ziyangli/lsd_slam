@@ -41,7 +41,7 @@ LiveSLAMWrapper::LiveSLAMWrapper(InputStream* inputStream, Output3DWrapper* outp
   this->inputStream   = inputStream;
   this->outputWrapper = outputWrapper;
 
-  inputStream->getImgBuffer()->setReceiver(this);
+  // inputStream->getImgBuffer()->setReceiver(this);
   inputStream->getPoseBuffer()->setReceiver(this);
 
   fx     = inputStream->fx();
@@ -84,44 +84,36 @@ void LiveSLAMWrapper::Loop() {
 
   while (true) {
 
-    boost::unique_lock<boost::recursive_mutex> imgLock(inputStream->getImgBuffer()->getMutex());
+    boost::unique_lock<boost::recursive_mutex> poseLock(inputStream->getPoseBuffer()->getMutex());
 
-    // wait for an image
-    while (!fullResetRequested &&
-           !(inputStream->getImgBuffer()->size() > 0)) {
-      notifyCondition.wait(imgLock);
+    while (!fullResetRequested && inputStream->getPoseBuffer()->empty()) {
+      notifyCondition.wait(poseLock);
     }
-    imgLock.unlock();
+    poseLock.unlock();
 
     if (fullResetRequested) {
       resetAll();
       fullResetRequested = false;
-      if (!(inputStream->getImgBuffer()->size() > 0))
+      if (inputStream->getPoseBuffer()->empty())
         continue;
     }
 
-    // no need to lock first???
+    TimestampedTFMsg vin_Pose_cam = inputStream->getPoseBuffer()->first();
+
+    boost::unique_lock<boost::recursive_mutex> imgLock(inputStream->getImgBuffer()->getMutex());
     TimestampedMat image = inputStream->getImgBuffer()->first();
     inputStream->getImgBuffer()->popFront();
+    imgLock.unlock();
 
-    // sleep to wait odom
-    usleep(1000);
-
-    boost::unique_lock<boost::recursive_mutex> poseLock(inputStream->getPoseBuffer()->getMutex());
-    // world_R_cam
-    while (!(inputStream->getPoseBuffer()->size() > 0)) {
-      ROS_WARN("wait for odom\n");
-      notifyCondition.wait(poseLock);
+    if (vin_Pose_cam.timestamp.toSec() != image.timestamp.toSec()) {
+      continue;
     }
-    poseLock.unlock();
-    TimestampedTFMsg vin_Pose_cam = inputStream->getPoseBuffer()->first();
+    else {
+      ROS_INFO("odom time %f img time %f %d %d", vin_Pose_cam.timestamp.toSec(), image.timestamp.toSec(), inputStream->getPoseBuffer()->size(), inputStream->getImgBuffer()->size());
+    }
+
     inputStream->getPoseBuffer()->popFront();
 
-    if (vin_Pose_cam.timestamp.toSec() - image.timestamp.toSec() > 0.01 || vin_Pose_cam.timestamp.toSec() < image.timestamp.toSec())
-      ROS_WARN("time diff too much %f %f", image.timestamp.toSec(), vin_Pose_cam.timestamp.toSec());
-
-    // process image
-    // Util::displayImage("MyVideo", image.data);
     newImageCallback(image.data, vin_Pose_cam.data, image.timestamp);
   }
 }
@@ -190,7 +182,7 @@ void LiveSLAMWrapper::resetAll() {
   }
 
   imageSeqNumber = 0;
-  isInitialized = false;
+  isInitialized  = false;
 
   Util::closeAllWindows();
 }

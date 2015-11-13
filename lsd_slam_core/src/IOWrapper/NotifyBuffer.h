@@ -109,6 +109,14 @@ class NotifyBuffer {
   }
 
   /**
+   * Empty
+   */
+  bool empty() {
+    boost::unique_lock<boost::recursive_mutex> lock(bufferMutex);
+    return queue.empty();
+  }
+
+  /**
    * Returns a copy of the first object.
    */
   T first() {

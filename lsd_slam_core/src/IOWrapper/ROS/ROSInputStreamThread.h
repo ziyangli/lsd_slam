@@ -33,9 +33,9 @@ class ROSInputStreamThread : public InputStream {
   void operator()();
 
   // get called on ros-message callbacks
-  void vidCb(const sensor_msgs::ImageConstPtr img);
-  void infoCb(const sensor_msgs::CameraInfoConstPtr info);
-  void odomCb(const nav_msgs::OdometryConstPtr odom);
+  void imgCb(const sensor_msgs::ImageConstPtr& img);
+  void infoCb(const sensor_msgs::CameraInfoConstPtr& info);
+  void odomCb(const nav_msgs::OdometryConstPtr& odom);
 
  private:
 

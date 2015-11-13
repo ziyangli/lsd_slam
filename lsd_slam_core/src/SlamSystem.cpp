@@ -24,10 +24,6 @@
 
 #include <deque>
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
 #include <opencv2/opencv.hpp>
 
 #include "SlamSystem.h"
@@ -52,9 +48,7 @@
 
 using namespace lsd_slam;
 
-SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM) :
-    SLAMEnabled(enableSLAM),
-    relocalizer(w, h, K) {
+SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM) : SLAMEnabled(enableSLAM), relocalizer(w, h, K) {
 
   if (w%16 != 0 || h%16 != 0) {
     printf("image dimensions must be multiples of 16! Please crop your images / video accordingly.\n");
@@ -71,19 +65,18 @@ SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM) :
   trackingReferenceFrameSharedPT = nullptr;
 
   tracker                        = new SE3Tracker(w, h, K);
-  map                            = new DepthMap(w, h, K);
-
-  newConstraintAdded             = false;
-  haveUnmergedOptimizationOffset = false;
-
-  keyFrameGraph                  = new KeyFrameGraph();
-
   // Do not use more than 4 levels for odometry tracking
   for (int level = 4; level < PYRAMID_LEVELS; ++level)
     tracker->settings.maxItsPerLvl[level] = 0;
-
   trackingReference              = new TrackingReference();
+
+  map                            = new DepthMap(w, h, K);
   mappingTrackingReference       = new TrackingReference();
+
+  keyFrameGraph                  = new KeyFrameGraph();
+
+  newConstraintAdded             = false;
+  haveUnmergedOptimizationOffset = false;
 
   constraintSE3Tracker           = nullptr;
   constraintTracker              = nullptr;
@@ -114,20 +107,22 @@ SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, bool enableSLAM) :
   }
 
   // debug info
-  msTrackFrame              = 0;
-  msFindReferences          = 0;
-  msOptimizationIteration   = msFindConstraintsItaration   = 0;
+  msTrackFrame                 = 0;
+  msFindReferences             = 0;
+  msOptimizationIteration      = 0;
+  msFindConstraintsItaration   = 0;
 
-  nTrackFrame               = 0;
-  nFindReferences           = 0;
-  nOptimizationIteration    = nFindConstraintsItaration    = 0;
+  nTrackFrame                  = 0;
+  nFindReferences              = 0;
+  nOptimizationIteration       = 0;
+  nFindConstraintsItaration    = 0;
 
-  nAvgTrackFrame            = 0;
-  nAvgFindReferences        = 0;
-  nAvgOptimizationIteration = nAvgFindConstraintsItaration = 0;
+  nAvgTrackFrame               = 0;
+  nAvgFindReferences           = 0;
+  nAvgOptimizationIteration    = 0;
+  nAvgFindConstraintsItaration = 0;
 
   gettimeofday(&lastHzUpdate, NULL);
-
 }
 
 SlamSystem::~SlamSystem() {

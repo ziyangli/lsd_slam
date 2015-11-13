@@ -37,25 +37,25 @@
 namespace lsd_slam {
 
 ROSOutput3DWrapper::ROSOutput3DWrapper(int width, int height) {
-  this->width = width;
-  this->height = height;
+  this->width         = width;
+  this->height        = height;
 
-  liveframe_channel = nh_.resolveName("lsd_slam/liveframes");
-  liveframe_publisher = nh_.advertise<lsd_slam_viewer::keyframeMsg>(liveframe_channel,1);
+  liveframe_channel   = nh_.resolveName("lsd_slam/liveframes");
+  liveframe_publisher = nh_.advertise<lsd_slam_viewer::keyframeMsg>(liveframe_channel, 1);
 
-  keyframe_channel = nh_.resolveName("lsd_slam/keyframes");
-  keyframe_publisher = nh_.advertise<lsd_slam_viewer::keyframeMsg>(keyframe_channel,1);
+  keyframe_channel    = nh_.resolveName("lsd_slam/keyframes");
+  keyframe_publisher  = nh_.advertise<lsd_slam_viewer::keyframeMsg>(keyframe_channel, 1);
 
-  graph_channel = nh_.resolveName("lsd_slam/graph");
-  graph_publisher = nh_.advertise<lsd_slam_viewer::keyframeGraphMsg>(graph_channel,1);
+  graph_channel       = nh_.resolveName("lsd_slam/graph");
+  graph_publisher     = nh_.advertise<lsd_slam_viewer::keyframeGraphMsg>(graph_channel, 1);
 
-  debugInfo_channel = nh_.resolveName("lsd_slam/debug");
-  debugInfo_publisher = nh_.advertise<std_msgs::Float32MultiArray>(debugInfo_channel,1);
+  debugInfo_channel   = nh_.resolveName("lsd_slam/debug");
+  debugInfo_publisher = nh_.advertise<std_msgs::Float32MultiArray>(debugInfo_channel, 1);
 
-  pose_channel = nh_.resolveName("lsd_slam/pose");
-  pose_publisher = nh_.advertise<geometry_msgs::PoseStamped>(pose_channel,1);
+  pose_channel        = nh_.resolveName("lsd_slam/pose");
+  pose_publisher      = nh_.advertise<geometry_msgs::PoseStamped>(pose_channel,1);
 
-  publishLvl=0;
+  publishLvl          = 0;
 }
 
 ROSOutput3DWrapper::~ROSOutput3DWrapper() { }

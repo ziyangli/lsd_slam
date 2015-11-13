@@ -22,14 +22,13 @@
 
 #include <ros/package.h>
 
+#include "SlamSystem.h"
 #include "LiveSLAMWrapper.h"
 
 #include "util/settings.h"
 #include "util/globalFuncs.h"
-#include "SlamSystem.h"
 
 #include "IOWrapper/ROS/ROSInputStreamThread.h"
-
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "IOWrapper/ROS/rosReconfigure.h"
 
@@ -68,9 +67,9 @@ int main(int argc, char** argv) {
 
   slamNode.Loop();
 
-  if (inputStream   != nullptr)
+  if (inputStream   != NULL)
     delete inputStream;
-  if (outputWrapper != nullptr)
+  if (outputWrapper != NULL)
     delete outputWrapper;
 
   return 0;

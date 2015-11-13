@@ -8,12 +8,13 @@
 #include "ROSInputStreamThread.h"
 
 namespace lsd_slam {
+
 using namespace cv;
 
 ROSInputStreamThread::ROSInputStreamThread() {
   // subscribe
   vid_channel  = nh_.resolveName("image");
-  vid_sub      = nh_.subscribe(vid_channel, 1, &ROSInputStreamThread::vidCb, this);
+  vid_sub      = nh_.subscribe(vid_channel, 1, &ROSInputStreamThread::imgCb, this);
 
   odom_channel = nh_.resolveName("odom");
   odom_sub     = nh_.subscribe(odom_channel, 1, &ROSInputStreamThread::odomCb, this);
@@ -22,14 +23,13 @@ ROSInputStreamThread::ROSInputStreamThread() {
   width_ = height_ = 0;
 
   // imagebuffer
-  imageBuffer = new NotifyBuffer<TimestampedMat>(8);
-  poseBuffer  = new NotifyBuffer<TimestampedTFMsg>(100);
+  imageBuffer = new NotifyBuffer<TimestampedMat>(50);
+  poseBuffer  = new NotifyBuffer<TimestampedTFMsg>(10);
 
-  undistorter = 0;
+  undistorter = NULL;
   lastSEQ     = 0;
 
-  haveCalib = false;
-
+  haveCalib   = false;
 }
 
 ROSInputStreamThread::~ROSInputStreamThread() {
@@ -46,56 +46,46 @@ void ROSInputStreamThread::operator()() {
   exit(0);
 }
 
-void ROSInputStreamThread::odomCb(const nav_msgs::OdometryConstPtr odom) {
-  TimestampedTFMsg bufferItem;
-  bufferItem.timestamp = Timestamp(odom->header.stamp.toSec());
-
+void ROSInputStreamThread::odomCb(const nav_msgs::OdometryConstPtr& odom) {
   geometry_msgs::Transform pose;
   pose.translation.x = odom->pose.pose.position.x;
   pose.translation.y = odom->pose.pose.position.y;
   pose.translation.z = odom->pose.pose.position.z;
-
   pose.rotation.x    = odom->pose.pose.orientation.x;
   pose.rotation.y    = odom->pose.pose.orientation.y;
   pose.rotation.z    = odom->pose.pose.orientation.z;
   pose.rotation.w    = odom->pose.pose.orientation.w;
 
-  bufferItem.data = pose;
+  TimestampedTFMsg bufferItem;
+  bufferItem.timestamp = Timestamp(odom->header.stamp.toSec());
+  bufferItem.data      = pose;
 
   poseBuffer->pushBack(bufferItem);
-
 }
 
-void ROSInputStreamThread::vidCb(const sensor_msgs::ImageConstPtr img) {
+void ROSInputStreamThread::imgCb(const sensor_msgs::ImageConstPtr& img) {
   if (!haveCalib) return;
 
   cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8);
 
-  if (img->header.seq < (unsigned int)lastSEQ) {
-    printf("Backward-Jump in SEQ detected, but ignoring for now.\n");
-    lastSEQ = 0;
-    return;
-  }
+  assert(img->header.seq > lastSEQ);
   lastSEQ = img->header.seq;
 
   TimestampedMat bufferItem;
-  if (img->header.stamp.toSec() != 0)
-    bufferItem.timestamp = Timestamp(img->header.stamp.toSec());
-  else
-    bufferItem.timestamp = Timestamp(ros::Time::now().toSec());
+  bufferItem.timestamp = Timestamp(img->header.stamp.toSec());
 
-  if (undistorter != 0) {
+  if (undistorter != NULL) {
     assert(undistorter->isValid());
-    undistorter->undistort(cv_ptr->image, bufferItem.data);
+    undistorter->undistort(cv_ptr->image(cv::Rect(0, 0, cv_ptr->image.cols, cv_ptr->image.rows/3)), bufferItem.data);
   }
   else {
-    bufferItem.data = cv_ptr->image;
+    bufferItem.data = cv_ptr->image(cv::Rect(0, 0, cv_ptr->image.cols, cv_ptr->image.rows/3));
   }
 
   imageBuffer->pushBack(bufferItem);
 }
 
-void ROSInputStreamThread::infoCb(const sensor_msgs::CameraInfoConstPtr info) {
+void ROSInputStreamThread::infoCb(const sensor_msgs::CameraInfoConstPtr& info) {
 
   if (!haveCalib) {
     fx_ = info->P[0];
@@ -149,7 +139,5 @@ void ROSInputStreamThread::setCalibration(std::string file) {
 
   haveCalib = true;
 }
-
-
 
 }

@@ -777,69 +777,61 @@ void Frame::buildIDepthAndIDepthVar(int level) {
 
   int sw = data.width[level - 1];
 
-  const float* idepthSource = data.idepth[level - 1];
+  const float* idepthSource    = data.idepth[level - 1];
   const float* idepthVarSource = data.idepthVar[level - 1];
-  float* idepthDest = data.idepth[level];
-  float* idepthVarDest = data.idepthVar[level];
+  float* idepthDest            = data.idepth[level];
+  float* idepthVarDest         = data.idepthVar[level];
 
-  for(int y=0;y<height;y++)
-  {
-    for(int x=0;x<width;x++)
-    {
-      int idx = 2*(x+y*sw);
-      int idxDest = (x+y*width);
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      int idx             = 2*(x+y*sw);
+      int idxDest         = (x+y*width);
 
       float idepthSumsSum = 0;
-      float ivarSumsSum = 0;
-      int num=0;
+      float ivarSumsSum   = 0;
+      int num             = 0;
 
       // build sums
       float ivar;
       float var = idepthVarSource[idx];
-      if(var > 0)
-      {
-        ivar = 1.0f / var;
-        ivarSumsSum += ivar;
+      if (var > 0) {
+        ivar           = 1.0f / var;
+        ivarSumsSum   += ivar;
         idepthSumsSum += ivar * idepthSource[idx];
         num++;
       }
 
       var = idepthVarSource[idx+1];
-      if(var > 0)
-      {
-        ivar = 1.0f / var;
-        ivarSumsSum += ivar;
+      if (var > 0) {
+        ivar           = 1.0f / var;
+        ivarSumsSum   += ivar;
         idepthSumsSum += ivar * idepthSource[idx+1];
         num++;
       }
 
       var = idepthVarSource[idx+sw];
-      if(var > 0)
-      {
-        ivar = 1.0f / var;
-        ivarSumsSum += ivar;
+      if (var > 0) {
+        ivar           = 1.0f / var;
+        ivarSumsSum   += ivar;
         idepthSumsSum += ivar * idepthSource[idx+sw];
         num++;
       }
 
       var = idepthVarSource[idx+sw+1];
-      if(var > 0)
-      {
-        ivar = 1.0f / var;
-        ivarSumsSum += ivar;
+      if (var > 0) {
+        ivar           = 1.0f / var;
+        ivarSumsSum   += ivar;
         idepthSumsSum += ivar * idepthSource[idx+sw+1];
         num++;
       }
 
-      if(num > 0)
-      {
-        float depth = ivarSumsSum / idepthSumsSum;
-        idepthDest[idxDest] = 1.0f / depth;
+      if (num > 0) {
+        float depth            = ivarSumsSum / idepthSumsSum;
+        idepthDest[idxDest]    = 1.0f / depth;
         idepthVarDest[idxDest] = num / ivarSumsSum;
       }
-      else
-      {
-        idepthDest[idxDest] = -1;
+      else {
+        idepthDest[idxDest]    = -1;
         idepthVarDest[idxDest] = -1;
       }
     }
