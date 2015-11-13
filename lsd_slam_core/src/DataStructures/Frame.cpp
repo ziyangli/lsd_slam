@@ -39,15 +39,11 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 
   data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 
-  // by zli: memcpy is not an option since data.image is float and image is uchar?
-  // memcpy(&data.image[0], image, sizeof(float) * data.width[0] * data.height[0]);
-
   // pointer to end of img
-  float* maxPt = data.image[0] + data.width[0]*data.height[0];
-
-  for(float* pt = data.image[0]; pt < maxPt; pt++) {
+  float* const maxPt = data.image[0] + data.width[0]*data.height[0];
+  // from uchar to float
+  for (float* pt = data.image[0]; pt < maxPt; pt++, image++) {
     *pt = *image;
-    image++;
   }
 
   data.imageValid[0] = true;
@@ -55,13 +51,12 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
   privateFrameAllocCount++;
 
   if (enablePrintDebugInfo && printMemoryDebugInfo)
-    printf("ALLOCATED frame %d, now there are %d\n",
-           this->id(), privateFrameAllocCount);
+    printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
 Frame::~Frame() {
 
-  if(enablePrintDebugInfo && printMemoryDebugInfo)
+  if (enablePrintDebugInfo && printMemoryDebugInfo)
     printf("DELETING frame %d\n", this->id());
 
   FrameMemory::getInstance().deactivateFrame(this);
@@ -83,9 +78,9 @@ Frame::~Frame() {
   FrameMemory::getInstance().returnBuffer(data.idepth_reAct);
   FrameMemory::getInstance().returnBuffer(data.idepthVar_reAct);
 
-  if (permaRef_colorAndVarData != 0)
+  if (permaRef_colorAndVarData != NULL)
     delete permaRef_colorAndVarData;
-  if (permaRef_posData != 0)
+  if (permaRef_posData != NULL)
     delete permaRef_posData;
 
   privateFrameAllocCount--;
@@ -361,8 +356,13 @@ void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, 
   const tf::Matrix3x3 lsd_R_vin(0, -1, 0, 0, 0, -1, 1, 0, 0);
   tf::Transform lsd_TF_vin(lsd_R_vin, tf::Vector3(0, 0, 0));
 
+  // camera to body
+  const tf::Matrix3x3 b_R_c(0, 0, 1, -1, 0, 0, 0, -1, 0);
+  tf::Transform b_TF_c(b_R_c, tf::Vector3(0, 0, 0));
+
   // from cam. pose to cam. world
   lsd_TF_vin.mult(lsd_TF_vin, vin_TF_cam);
+  lsd_TF_vin.mult(lsd_TF_vin, b_TF_c);
 
   Sim3 lsd_Sim3_cam(
       Eigen::Quaterniond(lsd_TF_vin.getRotation().getW(),
