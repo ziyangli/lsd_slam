@@ -23,8 +23,9 @@
 #include <sys/stat.h>
 
 #include <deque>
-
 #include <opencv2/opencv.hpp>
+
+#include <g2o/core/robust_kernel_impl.h>
 
 #include "SlamSystem.h"
 #include "LiveSLAMWrapper.h"
@@ -44,7 +45,6 @@
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
 #include "IOWrapper/ImageDisplay.h"
 #include "IOWrapper/Output3DWrapper.h"
-#include "g2o/core/robust_kernel_impl.h"
 
 using namespace lsd_slam;
 
@@ -703,7 +703,7 @@ void SlamSystem::takeRelocalizeResult() {
 
 bool SlamSystem::doMappingIteration() {
 
-  if (currentKeyFrame == nullptr)
+  if (currentKeyFrame == NULL)
     return false;
 
   // dynamic reconfigured to stop mapping.

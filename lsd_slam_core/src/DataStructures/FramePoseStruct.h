@@ -60,7 +60,11 @@ class FramePoseStruct {
 
   void setPoseGraphOptResult(Sim3 camToWorld);
   void applyPoseGraphOptResult();
-  Sim3 getCamToWorld(int recursionDepth = 0);
+
+  inline Sim3 getCamToWorld() {
+    return camToWorld;
+  };
+
   void invalidateCache();
 
  private:
