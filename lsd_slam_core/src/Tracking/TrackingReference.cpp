@@ -18,19 +18,17 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Tracking/TrackingReference.h"
-#include "DataStructures/Frame.h"
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
-#include "GlobalMapping/KeyFrameGraph.h"
-#include "util/globalFuncs.h"
-#include "IOWrapper/ImageDisplay.h"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+
+#include "TrackingReference.h"
 
 namespace lsd_slam {
 
 TrackingReference::TrackingReference() {
-  frameID      =-1;
-  keyframe     = 0;
-  wh_allocated = 0;
+  frameID      = -1;
+  keyframe     =  0;
+  wh_allocated =  0;
 
   for (int level = 0; level < PYRAMID_LEVELS; ++level) {
     posData[level]          = nullptr;
@@ -39,6 +37,12 @@ TrackingReference::TrackingReference() {
     pointPosInXYGrid[level] = nullptr;
     numData[level]          = 0;
   }
+}
+
+TrackingReference::~TrackingReference() {
+  boost::unique_lock<boost::mutex> lock(accessMutex);
+  invalidate();
+  releaseAll();
 }
 
 void TrackingReference::releaseAll() {
@@ -54,8 +58,10 @@ void TrackingReference::releaseAll() {
 
     if (pointPosInXYGrid[level] != nullptr)
       Eigen::internal::aligned_free((void*)pointPosInXYGrid[level]);
+
     numData[level] = 0;
   }
+
   wh_allocated = 0;
 }
 
@@ -64,17 +70,11 @@ void TrackingReference::clearAll() {
     numData[level] = 0;
 }
 
-TrackingReference::~TrackingReference() {
-  boost::unique_lock<boost::mutex> lock(accessMutex);
-  invalidate();
-  releaseAll();
-}
-
 void TrackingReference::importFrame(Frame* sourceKF) {
   boost::unique_lock<boost::mutex> lock(accessMutex);
   keyframeLock = sourceKF->getActiveLock();
-  keyframe = sourceKF;
-  frameID = keyframe->id();
+  keyframe     = sourceKF;
+  frameID      = keyframe->id();
 
   // reset allocation if dimensions differ (shouldnt happen usually)
   if (sourceKF->width(0) * sourceKF->height(0) != wh_allocated) {
