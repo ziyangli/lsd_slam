@@ -733,7 +733,6 @@ bool SlamSystem::doMappingIteration() {
   if (trackingIsGood) {
 
     if (!doMapping) {
-      //printf("tryToChange refframe, lastScore %f!\n", lastTrackingClosenessScore);
       if (lastTrackingClosenessScore > 1)
         changeKeyframe(true, false, lastTrackingClosenessScore * 0.75);
 

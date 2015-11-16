@@ -25,21 +25,18 @@
 namespace of2 {
 class FabMap;
 }
+
 namespace cv {
 class FeatureDetector;
 class BOWImgDescriptorExtractor;
 }
 
-
-namespace lsd_slam
-{
-
+namespace lsd_slam {
 
 class Frame;
 
 /** Interface to openFabMap. */
-class FabMap
-{
+class FabMap {
  public:
   /** Initializes FabMap. */
   FabMap();

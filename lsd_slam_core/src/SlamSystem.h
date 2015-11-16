@@ -126,7 +126,6 @@ class SlamSystem {
   TrackingReference* mappingTrackingReference;
 
   // during re-localization used
-  std::vector<Frame*> KFForReloc;
   std::shared_ptr<Frame> latestFrameTriedForReloc;
 
   // ============= EXCLUSIVELY FIND-CONSTRAINT THREAD (+ init) =============

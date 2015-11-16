@@ -18,10 +18,10 @@
  * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "g2oTypeSim3Sophus.h"
-
 #include <g2o/core/factory.h>
 #include <g2o/stuff/macros.h>
+
+#include "g2oTypeSim3Sophus.h"
 
 namespace lsd_slam {
 

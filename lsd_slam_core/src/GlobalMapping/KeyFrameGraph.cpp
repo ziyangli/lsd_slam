@@ -29,13 +29,6 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "KeyFrameGraph.h"
-#include "g2oTypeSim3Sophus.h"
-
-#include "DataStructures/Frame.h"
-#include "IOWrapper/ImageDisplay.h"
-#include "util/globalFuncs.h"
-
 #include <g2o/core/sparse_optimizer.h>
 #include <g2o/solvers/pcg/linear_solver_pcg.h>
 #include <g2o/solvers/csparse/linear_solver_csparse.h>
@@ -47,6 +40,13 @@
 #include <g2o/core/estimate_propagator.h>
 #include <g2o/core/sparse_optimizer_terminate_action.h>
 #include <g2o/types/sim3/sim3.h>
+
+#include "KeyFrameGraph.h"
+#include "g2oTypeSim3Sophus.h"
+
+#include "DataStructures/Frame.h"
+#include "IOWrapper/ImageDisplay.h"
+#include "util/globalFuncs.h"
 
 namespace lsd_slam {
 
@@ -208,11 +208,8 @@ void KeyFrameGraph::dumpMap(std::string folder) {
   printf("DUMP MAP: dumped %d edges\n", (int)edgesAll.size());
 }
 
-
-
-void KeyFrameGraph::addKeyFrame(Frame* frame)
-{
-  if(frame->pose->graphVertex != nullptr)
+void KeyFrameGraph::addKeyFrame(Frame* frame) {
+  if (frame->pose->graphVertex != nullptr)
     return;
 
   // Insert vertex into g2o graph
@@ -221,7 +218,7 @@ void KeyFrameGraph::addKeyFrame(Frame* frame)
 
   Sophus::Sim3d camToWorld_estimate = frame->getScaledCamToWorld();
 
-  if(!frame->hasTrackingParent())
+  if (!frame->hasTrackingParent())
     vertex->setFixed(true);
 
   vertex->setEstimate(camToWorld_estimate);
@@ -230,7 +227,6 @@ void KeyFrameGraph::addKeyFrame(Frame* frame)
   frame->pose->graphVertex = vertex;
 
   newKeyframesBuffer.push_back(frame);
-
 }
 
 void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint) {

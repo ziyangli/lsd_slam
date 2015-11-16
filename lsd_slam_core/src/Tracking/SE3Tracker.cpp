@@ -924,117 +924,6 @@ void SE3Tracker::calculateWarpUpdate(LGS6 &ls) {
 
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
-SE3 SE3Tracker::trackFrameOnPermaref(Frame* reference, Frame* frame, SE3 referenceToFrameOrg) {
-
-  Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
-
-  boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
-  boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
-
-  affineEstimation_a = 1;
-  affineEstimation_b = 0;
-
-  LGS6 ls;
-  diverged        = false;
-  trackingWasGood = true;
-
-  callOptimized(calcResidualAndBuffers,
-                (reference->permaRef_posData,
-                 reference->permaRef_colorAndVarData,
-                 0, reference->permaRefNumPts,
-                 frame, referenceToFrame, QUICK_KF_CHECK_LVL, false));
-  if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL)) {
-    diverged        = true;
-    trackingWasGood = false;
-    return SE3();
-  }
-
-  if (useAffineLightningEstimation) {
-    affineEstimation_a = affineEstimation_a_lastIt;
-    affineEstimation_b = affineEstimation_b_lastIt;
-  }
-
-  float lastErr = callOptimized(calcWeightsAndResidual, (referenceToFrame));
-
-  float LM_lambda = settings.lambdaInitialTestTrack;
-
-  for (int iteration = 0; iteration < settings.maxItsTestTrack; iteration++) {
-    callOptimized(calculateWarpUpdate, (ls));
-
-    int incTry = 0;
-    while (true) {
-      // solve LS system with current lambda
-      Vector6 b   = - ls.b;
-      Matrix6x6 A =   ls.A;
-      for (int i = 0; i < 6; i++)
-        A(i,i) *= 1+LM_lambda;
-      Vector6 inc = A.ldlt().solve(b);
-      incTry++;
-
-      // apply increment. pretty sure this way round is correct, but hard to test.
-      Sophus::SE3f new_referenceToFrame = Sophus::SE3f::exp((inc)) * referenceToFrame;
-
-      // re-evaluate residual
-      callOptimized(calcResidualAndBuffers,
-                    (reference->permaRef_posData,
-                     reference->permaRef_colorAndVarData,
-                     0, reference->permaRefNumPts,
-                     frame, new_referenceToFrame,
-                     QUICK_KF_CHECK_LVL, false));
-      if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL)) {
-        diverged = true;
-        trackingWasGood = false;
-        return SE3();
-      }
-
-      float error = callOptimized(calcWeightsAndResidual, (new_referenceToFrame));
-
-      // accept inc?
-      if (error < lastErr) {
-        // accept inc
-        referenceToFrame = new_referenceToFrame;
-        if (useAffineLightningEstimation) {
-          affineEstimation_a = affineEstimation_a_lastIt;
-          affineEstimation_b = affineEstimation_b_lastIt;
-        }
-        // converged?
-        if (error / lastErr > settings.convergenceEpsTestTrack)
-          iteration = settings.maxItsTestTrack;
-
-        lastErr = error;
-
-        if (LM_lambda <= 0.2)
-          LM_lambda = 0;
-        else
-          LM_lambda *= settings.lambdaSuccessFac;
-
-        break;
-      }
-      else {
-        if (!(inc.dot(inc) > settings.stepSizeMinTestTrack)) {
-          iteration = settings.maxItsTestTrack;
-          break;
-        }
-
-        if (LM_lambda == 0)
-          LM_lambda = 0.2;
-        else
-          LM_lambda *= std::pow(settings.lambdaFailFac, incTry);
-      }
-    }
-  }
-
-  lastResidual = lastErr;
-
-  trackingWasGood = !diverged &&
-                    lastGoodCount / (frame->width(QUICK_KF_CHECK_LVL)*frame->height(QUICK_KF_CHECK_LVL)) > MIN_GOODPERALL_PIXEL &&
-                    lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
-
-  return toSophus(referenceToFrame);
-}
-
-// tracks a frame.
-// first_frame has depth, second_frame DOES NOT have depth.
 SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3& frameToReference_initialEstimate) {
 
   // lock current frame
@@ -1240,6 +1129,115 @@ SE3 SE3Tracker::trackFrame(TrackingReference* reference, Frame* frame, const SE3
   frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()), 1);
   frame->pose->trackingParent   = reference->keyframe->pose;
   return toSophus(referenceToFrame.inverse());
+}
+
+SE3 SE3Tracker::trackFrameOnPermaref(Frame* reference, Frame* frame, SE3 referenceToFrameOrg) {
+
+  Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
+
+  boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
+  boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
+
+  affineEstimation_a = 1;
+  affineEstimation_b = 0;
+
+  LGS6 ls;
+  diverged        = false;
+  trackingWasGood = true;
+
+  callOptimized(calcResidualAndBuffers,
+                (reference->permaRef_posData,
+                 reference->permaRef_colorAndVarData,
+                 0, reference->permaRefNumPts,
+                 frame, referenceToFrame, QUICK_KF_CHECK_LVL, false));
+  if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL)) {
+    diverged        = true;
+    trackingWasGood = false;
+    return SE3();
+  }
+
+  if (useAffineLightningEstimation) {
+    affineEstimation_a = affineEstimation_a_lastIt;
+    affineEstimation_b = affineEstimation_b_lastIt;
+  }
+
+  float lastErr = callOptimized(calcWeightsAndResidual, (referenceToFrame));
+
+  float LM_lambda = settings.lambdaInitialTestTrack;
+
+  for (int iteration = 0; iteration < settings.maxItsTestTrack; iteration++) {
+    callOptimized(calculateWarpUpdate, (ls));
+
+    int incTry = 0;
+    while (true) {
+      // solve LS system with current lambda
+      Vector6 b   = - ls.b;
+      Matrix6x6 A =   ls.A;
+      for (int i = 0; i < 6; i++)
+        A(i,i) *= 1+LM_lambda;
+      Vector6 inc = A.ldlt().solve(b);
+      incTry++;
+
+      // apply increment. pretty sure this way round is correct, but hard to test.
+      Sophus::SE3f new_referenceToFrame = Sophus::SE3f::exp((inc)) * referenceToFrame;
+
+      // re-evaluate residual
+      callOptimized(calcResidualAndBuffers,
+                    (reference->permaRef_posData,
+                     reference->permaRef_colorAndVarData,
+                     0, reference->permaRefNumPts,
+                     frame, new_referenceToFrame,
+                     QUICK_KF_CHECK_LVL, false));
+      if (buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL)) {
+        diverged = true;
+        trackingWasGood = false;
+        return SE3();
+      }
+
+      float error = callOptimized(calcWeightsAndResidual, (new_referenceToFrame));
+
+      // accept inc?
+      if (error < lastErr) {
+        // accept inc
+        referenceToFrame = new_referenceToFrame;
+        if (useAffineLightningEstimation) {
+          affineEstimation_a = affineEstimation_a_lastIt;
+          affineEstimation_b = affineEstimation_b_lastIt;
+        }
+        // converged?
+        if (error / lastErr > settings.convergenceEpsTestTrack)
+          iteration = settings.maxItsTestTrack;
+
+        lastErr = error;
+
+        if (LM_lambda <= 0.2)
+          LM_lambda = 0;
+        else
+          LM_lambda *= settings.lambdaSuccessFac;
+
+        break;
+      }
+      else {
+        if (!(inc.dot(inc) > settings.stepSizeMinTestTrack)) {
+          iteration = settings.maxItsTestTrack;
+          break;
+        }
+
+        if (LM_lambda == 0)
+          LM_lambda = 0.2;
+        else
+          LM_lambda *= std::pow(settings.lambdaFailFac, incTry);
+      }
+    }
+  }
+
+  lastResidual = lastErr;
+
+  trackingWasGood = !diverged &&
+                    lastGoodCount / (frame->width(QUICK_KF_CHECK_LVL)*frame->height(QUICK_KF_CHECK_LVL)) > MIN_GOODPERALL_PIXEL &&
+                    lastGoodCount / (lastGoodCount + lastBadCount) > MIN_GOODPERGOODBAD_PIXEL;
+
+  return toSophus(referenceToFrame);
 }
 
 // tracks a frame.

@@ -19,8 +19,9 @@
  */
 
 #include "Relocalizer.h"
-#include "DataStructures/Frame.h"
-#include "Tracking/SE3Tracker.h"
+
+#include "TrackingReference.h"
+
 #include "IOWrapper/ImageDisplay.h"
 
 namespace lsd_slam {
@@ -29,13 +30,15 @@ Relocalizer::Relocalizer(int w, int h, Eigen::Matrix3f K) {
   for (int i = 0; i < RELOCALIZE_THREADS; i++)
     running[i] = false;
 
-  this->w = w;
-  this->h = h;
-  this->K = K;
+  this->w               = w;
+  this->h               = h;
+  this->K               = K;
 
   KFForReloc.clear();
-  nextRelocIDX = maxRelocIDX = 0;
-  continueRunning = isRunning = false;
+  nextRelocIDX          = 0;
+  maxRelocIDX           = 0;
+  continueRunning       = false;
+  isRunning             = false;
 
   hasResult             = false;
   resultKF              = nullptr;
@@ -89,7 +92,6 @@ void Relocalizer::start(std::vector<Frame*, Eigen::aligned_allocator<lsd_slam::F
   // make KFForReloc List
   KFForReloc.clear();
   for (unsigned int k = 0; k < allKeyframesList.size(); k++) {
-    // insert
     KFForReloc.push_back(allKeyframesList[k]);
 
     // swap with a random element
@@ -156,8 +158,12 @@ void Relocalizer::threadLoop(int idx) {
 
       lock.unlock();
 
+      SE3 frameToTodo = se3FromSim3(todo->getScaledCamToWorld().inverse() * myRelocFrame->getScaledCamToWorld());
+
       // initial Alignment
-      SE3 todoToFrame = tracker->trackFrameOnPermaref(todo, myRelocFrame.get(), SE3());
+      TrackingReference todoAsRef;
+      todoAsRef.importFrame(todo);
+      SE3 todoToFrame = tracker->dummyTrackFrame(&todoAsRef, myRelocFrame.get(), frameToTodo);
 
       // try neighbours
       float todoGoodVal = tracker->pointUsage * tracker->lastGoodCount / (tracker->lastGoodCount+tracker->lastBadCount);
@@ -173,13 +179,14 @@ void Relocalizer::threadLoop(int idx) {
         SE3 bestKFToFrame           = todoToFrame;
 
         for (Frame* nkf : todo->neighbors) {
-          SE3 nkfToFrame_init = se3FromSim3((nkf->getScaledCamToWorld().inverse() * todo->getScaledCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
-          SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf, myRelocFrame.get(), nkfToFrame_init);
+          SE3 frameToNkf = se3FromSim3(nkf->getScaledCamToWorld().inverse() * myRelocFrame->getScaledCamToWorld());
+          TrackingReference nkfAsRef;
+          nkfAsRef.importFrame(nkf);
+          SE3 nkfToFrame = tracker->dummyTrackFrame(&nkfAsRef, myRelocFrame.get(), frameToNkf);
 
           float goodVal = tracker->pointUsage * tracker->lastGoodCount / (tracker->lastGoodCount+tracker->lastBadCount);
 
-          if (goodVal > relocalizationTH*0.8 &&
-              (nkfToFrame * nkfToFrame_init.inverse()).log().norm() < 0.1)
+          if (goodVal > relocalizationTH*0.8 && (nkfToFrame * frameToNkf).log().norm() < 0.1)
             numGoodNeighbours++;
           else
             numBadNeighbours++;
@@ -192,8 +199,7 @@ void Relocalizer::threadLoop(int idx) {
           }
         }
 
-        if (numGoodNeighbours > numBadNeighbours ||
-            numGoodNeighbours >= 5) {
+        if (numGoodNeighbours > numBadNeighbours || numGoodNeighbours >= 5) {
           if (enablePrintDebugInfo && printRelocalizationInfo)
             printf("RELOCALIZED! frame %d on %d (bestNeighbour %d): good %2.1f%%, usage %2.1f%%, GoodNeighbours %d / %d\n",
                    myRelocFrame->id(), todo->id(), bestKF->id(),
