@@ -37,10 +37,10 @@
 namespace lsd_slam {
 
 DepthMap::DepthMap(int w, int h, const Eigen::Matrix3f& K) {
-  width = w;
+  width  = w;
   height = h;
 
-  activeKeyFrame              = 0;
+  activeKeyFrame              = NULL;
   activeKeyFrameIsReactivated = false;
 
   otherDepthMap   = new DepthMapPixelHypothesis[width*height];

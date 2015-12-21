@@ -48,10 +48,10 @@ inline float getInterpolatedElement(const float* const mat, const float x, const
   float dxdy      = dx * dy;
   const float* bp = mat + ix + iy * width;
 
-  float res =   dxdy * bp[1 + width]
-                + (dy - dxdy) * bp[width]
-                + (dx - dxdy) * bp[1]
-                + (1 - dx - dy + dxdy) * bp[0];
+  float res       = dxdy * bp[1 + width] +
+                    (dy - dxdy) * bp[width] +
+                    (dx - dxdy) * bp[1] +
+                    (1 - dx - dy + dxdy) * bp[0];
 
   return res;
 }

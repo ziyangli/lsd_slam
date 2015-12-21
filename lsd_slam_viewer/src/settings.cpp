@@ -24,7 +24,7 @@
 float pointTesselation     = 1;
 float lineTesselation      = 2;
 
-bool keepInMemory          =true;
+bool keepInMemory          = true;
 bool showKFCameras         = true;
 bool showKFPointclouds     = true;
 bool showConstraints       = true;

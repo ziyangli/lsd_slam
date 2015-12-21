@@ -85,7 +85,9 @@ class KeyFrameDisplay {
   GLuint           vertexBufferId;
   int              vertexBufferNumPoints;
 
-  bool vertexBufferIdValid; // true if the vertixBufferID is valid (doesnt mean the data in there is still valid)
-  bool glBuffersValid;      // true if the vertexBufferID contains valid data
+  // true if the vertixBufferID is valid (doesnt mean the data in there is still valid)
+  bool             vertexBufferIdValid;
+  // true if the vertexBufferID contains valid data
+  bool             glBuffersValid;
 
 };

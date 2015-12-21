@@ -762,6 +762,7 @@ bool SlamSystem::doMappingIteration() {
     return true;
   }
   else {
+
     // invalidate map if it was valid.
     if (map->isValid()) {
       if (currentKeyFrame->numMappedOnThisTotal >= MIN_NUM_MAPPED)
@@ -855,7 +856,7 @@ void SlamSystem::trackFrame(uchar* image, unsigned int frameID, const geometry_m
     printf("TRACKING %d on %d\n", trackingNewFrame->id(), trackingReferencePose->frameID);
 
   poseConsistencyMutex.lock_shared();
-  // by zli: ref: keyframe yet not finalized
+  // by zli: ref: keyframe not yet finalized
   SE3 frameToReference_initialEstimate = se3FromSim3(
       trackingReferencePose->getCamToWorld().inverse() *
       keyFrameGraph->allFramePoses.back()->getCamToWorld()); /* zli: seems to be the previous tracked frame */

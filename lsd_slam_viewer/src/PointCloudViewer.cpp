@@ -80,8 +80,8 @@ void PointCloudViewer::reset() {
   if (graphDisplay != NULL)
     delete graphDisplay;
 
-  currentCamDisplay = new KeyFrameDisplay();
-  graphDisplay = new KeyFrameGraphDisplay();
+  currentCamDisplay   = new KeyFrameDisplay();
+  graphDisplay        = new KeyFrameGraphDisplay();
 
   KFcurrent           = 0;
   KFLastPCSeq         = -1;
@@ -92,7 +92,9 @@ void PointCloudViewer::reset() {
   localMsBetweenSaves = 1;
   simMsBetweenSaves   = 1;
   lastCamID           = -1;
-  lastAnimTime = lastCamTime = lastSaveTime = 0;
+  lastAnimTime        = 0;
+  lastCamTime         = 0;
+  lastSaveTime        = 0;
   char buf[500];
   snprintf(buf, 500, "rm -rf %s", save_folder.c_str());
   int k = system(buf);
@@ -105,7 +107,7 @@ void PointCloudViewer::reset() {
   setTextIsEnabled(false);
   lastAutoplayCheckedSaveTime = -1;
 
-  animationPlaybackEnabled = false;
+  animationPlaybackEnabled    = false;
 }
 
 void PointCloudViewer::addFrameMsg(lsd_slam_viewer::keyframeMsgConstPtr msg) {
@@ -182,46 +184,36 @@ void PointCloudViewer::draw() {
 
     accTime = 0;
     AnimationObject* lastAnimObj = 0;
-    for (unsigned int i=0;i<animationList.size();i++)  {
+    for (unsigned int i = 0; i < animationList.size() ; i++)  {
       accTime += animationList[i].duration;
-      if(animationList[i].isSettings && accTime <= tm)
+      if (animationList[i].isSettings && accTime <= tm)
         lastAnimObj = &(animationList[i]);
     }
-    if(lastAnimObj != 0)
-    {
-      absDepthVarTH = lastAnimObj->absTH;
+    if (lastAnimObj != 0) {
+      absDepthVarTH    = lastAnimObj->absTH;
       scaledDepthVarTH = lastAnimObj->scaledTH;
-      minNearSupport = lastAnimObj->neighb;
-      sparsifyFactor = lastAnimObj->sparsity;
-      showKFCameras = lastAnimObj->showKeyframes;
-      showConstraints = lastAnimObj->showLoopClosures;
+      minNearSupport   = lastAnimObj->neighb;
+      sparsifyFactor   = lastAnimObj->sparsity;
+      showKFCameras    = lastAnimObj->showKeyframes;
+      showConstraints  = lastAnimObj->showLoopClosures;
     }
   }
 
-
-
-  if(showCurrentCamera)
+  if (showCurrentCamera)
     currentCamDisplay->drawCam(2*lineTesselation, 0);
 
-  if(showCurrentPointcloud)
+  if (showCurrentPointcloud)
     currentCamDisplay->drawPC(pointTesselation, 1);
 
-
   graphDisplay->draw();
-
 
   glPopMatrix();
 
   meddleMutex.unlock();
 
-
-
-
-  if(saveAllVideo)
-  {
+  if (saveAllVideo) {
     double span = ros::Time::now().toSec() - lastRealSaveTime;
-    if(span > 0.4)
-    {
+    if (span > 0.4) {
       setSnapshotQuality(100);
 
       printf("saved (img %d @ time %lf, saveHZ %f)!\n", lastCamID, lastAnimTime, 1.0/localMsBetweenSaves);
@@ -231,13 +223,10 @@ void PointCloudViewer::draw() {
       saveSnapshot(QString(buf));
       lastRealSaveTime = ros::Time::now().toSec();
     }
-
-
   }
 }
 
 void PointCloudViewer::keyReleaseEvent(QKeyEvent *e) { }
-
 
 void PointCloudViewer::setToVideoSize() {
   this->setFixedSize(1600,900);
